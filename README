@@ -19,12 +19,13 @@ The downside to Trunkfish is that there's no GUI, and it doesn't account for eve
 
    Files that go with this script:
 
-   trunkfi.sh              -   The main script that does the work.
-   trunkfish.cfg           -   The configuration file. You need to edit this file before you run trunkfi.sh.
-   find_trunkfi.sh         -   A script to identify when a file was was most recently updated.
-   ~trunkfish_excludes.txt -   A temporary txt file that contains rsync filters for the backup.
-   ~trunkfish.log          -   A temporary log of the backup events.
-   ~trunk_err.log          -   A temporary log of backup errors, if there are any.
+   README                  - This file.
+   trunkfi.sh              - The main script that does the work.
+   trunkfish.cfg           - The configuration file. You need to edit this file before you run trunkfi.sh.
+   find_trunkfi.sh         - A script to identify when a file was was most recently updated.
+   ~trunkfish_excludes.txt - A temporary txt file that contains rsync filters for the backup.
+   ~trunkfish.log          - A temporary log of the backup events.
+   ~trunk_err.log          - A temporary log of backup errors, if there are any.
 
    TODO:
         - add a script that unloads and deletes plist
