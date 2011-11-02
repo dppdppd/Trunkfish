@@ -1,0 +1,26 @@
+#==============================================================================
+#  Copyright 2011 Ido Magal. All rights reserved. 
+#
+#   DISCLAIMER: USE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR READING AND UNDERSTANDING THE CODE
+#               IN THIS SCRIPT AND NO GUARANTEE IS GIVEN OR IMPLIED.
+#               
+#               THIS CODE MAY ERASE EVERYTHING, ANYWHERE, AT ANY MOMENT.
+#
+#
+#   Files that go with this script:\
+#
+#       trunkfi.sh              -   This file. Does the backing up.
+#       trunkfish.cf            -   The configuration file. You should edit this file before you run backup.sh for the first time.
+#       find_trunkfi.sh         -   A script to identify when a file was was most recently updated.
+#       ~trunkfish_excludes.txt -   A txt file gets created from backup_settings.cfg, and contains rsync filters for the backup.
+#       ~trunkfish.log          -   A log of the backup events.
+#       ~trunk_err.log          -   A log of backup errors, if there are any.
+#
+#       TODO:
+#           - add a script that unloads and deletes plist
+#           - merge setup scripts into this one
+#           - make sure dry run is enforced throughout all scripts
+#           - require root for setup scripts
+#
+#  Email:   M8R-u8t2l4 AT mailinator DOT com
+#==============================================================================
