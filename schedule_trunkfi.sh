@@ -1,8 +1,8 @@
 #!/bin/sh
 
-PlistPath="/Library/LaunchDaemons/com.idomagal.backup.plist"
+PlistPath="/Library/LaunchDaemons/com.trunkfish.backup.plist"
 
-Hour=5
+Hour=0
 
 Plist="
 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -10,7 +10,7 @@ Plist="
 <plist version=\"1.0\">
 <dict>
     <key>Label</key>
-    <string>com.idomagal.backup</string>
+    <string>com.trunkfish.backup</string>
 
     <key>ProgramArguments</key>
     <array>
@@ -32,6 +32,7 @@ if [ -z "$DRYRUN" ]; then
     echo "$Plist" > "$PlistPath"
 fi
 
+$DRYRUN launchctl stop com.trunkfish.backup 2>/dev/null
+$DRYRUN launchctl unload "$PlistPath" 2>/dev/null
 $DRYRUN launchctl load "$PlistPath"
-
-$DRYRUN launchctl start com.idomagal.backup
+$DRYRUN launchctl start com.trunkfish.backup

@@ -19,7 +19,6 @@
 #       ~trunk_err.log          -   A log of backup errors, if there are any.
 #
 #       TODO:
-#           - test ssh setup
 #           - add a script that unloads and deletes plist
 #           - merge setup scripts into this one
 #           - make sure dry run is enforced throughout all scripts
