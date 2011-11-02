@@ -10,6 +10,8 @@ ThisUser=$(id -u -n)
 
 ThisComputer=$(hostname)
 
+rHOME="~$ThisUser"
+
 echo
 echo "\t The purpose of this script is to allow you to connect to the Server"
 echo "\t without requiring entering the SSH password every time, since it is"
@@ -29,9 +31,13 @@ echo
 if [ 0 -ne `ssh ${ServerUser}@${Server} test -f "$AuthorizedKeys" ;echo \$?` ]; then
     echo
     echo "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file."
+    echo
     $DRYRUN ssh ${ServerUser}@${Server} "mkdir $HOME/.ssh" 2> /dev/null
+    echo
     echo "\t Creating $AuthorizedKeys on Server."
+    echo
     $DRYRUN ssh ${ServerUser}@${Server} "touch "$AuthorizedKeys""
+    echo
 else
     echo
     echo "\t $AuthorizedKeys exists."
@@ -40,14 +46,17 @@ else
     if [ `ssh ${ServerUser}@${Server} "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]; then
         echo
         echo "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
+        echo
     exit 1
     else
         echo
-        echo "\t ${ThisUser}@${ThisComputer} doesn't have an entry in $HOME/.ssh/authorized_keys. Let's add one."
+        echo "\t ${ThisUser}@${ThisComputer} doesn't have an entry in $HOME/.ssh/authorized_keys."
+        echo "\t Let's add one."
+        echo
     fi
 fi
 
-if [ 0 -eq `eval test -f $HOME/.ssh/id_rsa.pub; echo \$?` ]; then
+if [ 0 -eq `eval test -f $rHOME/.ssh/id_rsa.pub; echo \$?` ]; then
     echo
     echo "\t I found an existing public key here: $HOME/.ssh/id_rsa.pub."
     echo "\t I will copy it onto the Server."
@@ -60,10 +69,12 @@ else
     echo "\t If you pick a non-default location for the key file, you'll need to"
     echo "\t edit this script, since I assume it's $HOME/.ssh/id_rsa.pub and attempt to"
     echo "\t copy it from there."
+    echo
     $DRYRUN $SSHKeyGen
 fi
 
-$DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' "$PubKey" ${ServerUser}@${Server}:~/.ssh/tmp
+$DRYRUN eval "cd $rHOME/.ssh"
+$DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' id_rsa.pub ${ServerUser}@${Server}:~/.ssh/tmp
 $DRYRUN ssh ${ServerUser}@${Server} "echo >> "$AuthorizedKeys" && cat ~/.ssh/tmp >> "$AuthorizedKeys" && rm ~/.ssh/tmp"
 
 echo
