@@ -19,7 +19,7 @@ The downside to Trunkfish is that there's no GUI, and it doesn't account for eve
 
    Files that go with this script:
 
-   trunkfi.sh              -   This file. Does the backing up.
+   trunkfi.sh              -   The main script that does the work.
    trunkfish.cfg           -   The configuration file. You need to edit this file before you run trunkfi.sh.
    find_trunkfi.sh         -   A script to identify when a file was was most recently updated.
    ~trunkfish_excludes.txt -   A temporary txt file that contains rsync filters for the backup.
