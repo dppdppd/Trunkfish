@@ -11,12 +11,12 @@
 #
 #   Files that go with this script:\
 #
-#       backup.sh               -   This file. Does the backing up.
-#       backup_settings.cfg     -   The configuration file. You should edit this file before you run backup.sh for the first time.
-#       backup_find.sh          -   A script to identify when a file was was most recently updated.
-#       ~backup_excludes.txt    -   A txt file gets created from backup_settings.cfg, and contains rsync filters for the backup.
-#       ~backup.log             -   A log that gets created during each backup of the backup events.
-#       ~backup_err.log         -   A log that gets created during each backup of backup errors, if there are any.
+#       trunkfi.sh              -   This file. Does the backing up.
+#       trunkfish.cf            -   The configuration file. You should edit this file before you run backup.sh for the first time.
+#       find_trunkfi.sh         -   A script to identify when a file was was most recently updated.
+#       ~trunkfish_excludes.txt -   A txt file gets created from backup_settings.cfg, and contains rsync filters for the backup.
+#       ~trunkfish.log          -   A log of the backup events.
+#       ~trunk_err.log          -   A log of backup errors, if there are any.
 #
 #       TODO:
 #           - test ssh setup
@@ -59,7 +59,7 @@ for var in "$@"; do
 
         --nologs)       NOLOGS=1;;
 
-        --setup-SSH)    . $SSHSetupScriptPath; exit 0;;
+        --setup-ssh)    . $SSHSetupScriptPath; exit 0;;
 
         --schedule)     . $SchedSetupScriptPath; exit 0;;
 
@@ -189,16 +189,17 @@ do
     PrevDate=$(date -v -${_days}d +"$DateFormat")
 done
 
+if [ -n $NEWBACKUP ]; then
+    $PrevDate="NONE"
+fi
+
 #========================================================
 # Print working variables for debugging and the logs
 #========================================================
 echo
 echo ------------------------------------------------------------------------------
 echo "Today's date:  $Today"
-case "$NEWBACKUP" in
-    1)echo "Last backup:   NONE";;
-    *)echo "Last backup:   $PrevDate";;
-esac
+echo "Last backup:   $PrevDate";;
 echo "Backing up:    $BackupDir"
 echo "Destination:   $RemoteDir"
 echo "Server user:   $ServerUser"
@@ -221,7 +222,7 @@ echo
 # If we don't delete it, the next backup will generate lots of duplicate files because it will link to this partial directory. We'd rather it link to the previous good backup.
 
 trap trap_backup ERR
-$DRYRUN rsync -cW --stats --bwlimit=3000 --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -avz --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
+$DRYRUN rsync --stats --bwlimit=1000 --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -avz --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
 trap - ERR
 
 

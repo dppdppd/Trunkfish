@@ -24,35 +24,43 @@ echo
 read -p "Press enter to start or Ctrl-C to exit..."
 echo
 
-echo "\t Searching for ~/.ssh/authorized_keys on the Server."
-if [ -1 -eq `ssh ${ServerUser}@${Server} test -d "$AuthorizedKeys" ;echo \$?` ]; then
-    echo "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file. I'll make one."
-    echo "\t Creating ~/.ssh on Server."
-    $DRYRUN ssh ${ServerUser}@${Server} "mkdir ~/.ssh"
+echo "\t Searching for $AuthorizedKeys on the Server."
+echo
+if [ 0 -ne `ssh ${ServerUser}@${Server} test -f "$AuthorizedKeys" ;echo \$?` ]; then
+    echo
+    echo "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file."
+    $DRYRUN ssh ${ServerUser}@${Server} "mkdir $HOME/.ssh" 2> /dev/null
     echo "\t Creating $AuthorizedKeys on Server."
     $DRYRUN ssh ${ServerUser}@${Server} "touch "$AuthorizedKeys""
 else
-    echo "\t Searching for an entry for ${ThisUser}@${ThisComputer} in ~/.ssh/authorized_keys."
+    echo
+    echo "\t $AuthorizedKeys exists."
+    echo "\t Searching for an entry for ${ThisUser}@${ThisComputer} in $HOME/.ssh/authorized_keys."
+    echo
     if [ `ssh ${ServerUser}@${Server} "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]; then
-        echo "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
         echo
+        echo "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
     exit 1
+    else
+        echo
+        echo "\t ${ThisUser}@${ThisComputer} doesn't have an entry in $HOME/.ssh/authorized_keys. Let's add one."
     fi
 fi
 
-if [ -e $PubKey ]; then
+if [ 0 -eq `eval test -f $HOME/.ssh/id_rsa.pub; echo \$?` ]; then
     echo
-    echo "\t I found an existing public key here: $PubKey."
+    echo "\t I found an existing public key here: $HOME/.ssh/id_rsa.pub."
     echo "\t I will copy it onto the Server."
+    echo
 else
     echo
     echo "\t I didn't find a public key for you. You will need to generate one."
     echo "\t I'm going to execute '$SSHKeyGen' for you. Follow the prompts."
     echo "\t I recommend just hitting enter to get the defaults."
     echo "\t If you pick a non-default location for the key file, you'll need to"
-    echo "\t edit this script, since I assume it's "$PubKey" and attempt to"
+    echo "\t edit this script, since I assume it's $HOME/.ssh/id_rsa.pub and attempt to"
     echo "\t copy it from there."
-    $DRYRUN SSHKeyGen
+    $DRYRUN $SSHKeyGen
 fi
 
 $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' "$PubKey" ${ServerUser}@${Server}:~/.ssh/tmp
