@@ -5,11 +5,11 @@
                
                THIS CODE MAY ERASE EVERYTHING, ANYWHERE, AT ANY MOMENT.
 
-Trunkfish is a script that will create periodic backups from the machine executing it onto a different machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work for backing up any posix device onto any other posix device, provided they have the requisite programs.
+Trunkfish is a script that will create periodic backups from the machine executing it onto a separate machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work for backing up any posix device onto any other posix device, provided they have the requisite programs.
 
 Trunkfish uses hardlinks to minimize actual used drive space, like Time Machine or rsnapshot.
 
-Trunkfish's advantage over Time Machine is that it does not use a proprietary storage format. Instead it uses loose files that you can navigate without special software. Time Machine required me to start from scratch one too many times on my DroboFS for me to rely on it.
+Trunkfish's advantage over Time Machine is that it does not use a proprietary storage format. Instead it stores a complete snapshot of the backed up directory as loose files that you can navigate without special software. Time Machine required me to start from scratch one too many times on my DroboFS for me to rely on it.
 
 Trunkfish's advantage over rsnapshot is that it does not require running the software on the server ( which is not possible on a DroboFS ), it's much easier to setup, and it uses absolute dates on backups, rather than relative ones.
 
@@ -17,20 +17,20 @@ Another advantage of Trunkfish is that it should be relatively easy code to read
 
 The downside to Trunkfish is that there's no GUI, and it doesn't account for every usage case, although a goal is to make it as fault-tolerant as possible.
 
-   Files that go with this script:\
+   Files that go with this script:
 
        trunkfi.sh              -   This file. Does the backing up.
        trunkfish.cf            -   The configuration file. You should edit this file before you run backup.sh for the first time.
-      find_trunkfi.sh         -   A script to identify when a file was was most recently updated.
-       ~trunkfish_excludes.txt -   A txt file gets created from backup_settings.cfg, and contains rsync filters for the backup.
-       ~trunkfish.log          -   A log of the backup events.
-       ~trunk_err.log          -   A log of backup errors, if there are any.
+       find_trunkfi.sh         -   A script to identify when a file was was most recently updated.
+       ~trunkfish_excludes.txt -   A temporary txt file gets created from backup_settings.cfg, and contains rsync filters for the backup.
+       ~trunkfish.log          -   A temporary log of the backup events.
+       ~trunk_err.log          -   A temporary log of backup errors, if there are any.
 
-       TODO:
-           - add a script that unloads and deletes plist
-           - merge setup scripts into this one
-           - make sure dry run is enforced throughout all scripts
-           - require root for setup scripts
+   TODO:
+        - add a script that unloads and deletes plist
+        - merge setup scripts into this one
+        - make sure dry run is enforced throughout all scripts
+        - require root for setup scripts
 
   Email:   M8R-u8t2l4 AT mailinator DOT com
 
