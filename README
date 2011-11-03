@@ -1,21 +1,23 @@
+=====================================================================================================================
   Copyright 2011 Ido Magal. All rights reserved. 
+=====================================================================================================================
+DISCLAIMER: 
 
-   DISCLAIMER: USE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR READING AND UNDERSTANDING THE CODE
-               IN THIS SCRIPT AND NO GUARANTEE IS GIVEN OR IMPLIED.
+USE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR READING AND UNDERSTANDING THE CODE IN THIS SCRIPT AND NO GUARANTEE IS GIVEN OR IMPLIED.
                
-               THIS CODE MAY ERASE EVERYTHING, ANYWHERE, AT ANY MOMENT.
+THIS CODE MAY ERASE EVERYTHING, ANYWHERE, AT ANY MOMENT.
+=====================================================================================================================
 
+WHAT IS TRUNKFISH?
 Trunkfish is a script that will create periodic backups from the machine executing it onto a separate machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work for backing up any posix device onto any other posix device, provided they have the requisite programs.
 
 Trunkfish uses hardlinks to minimize actual used drive space, like Time Machine or rsnapshot.
 
-Trunkfish's advantage over Time Machine is that it does not use a proprietary storage format. Instead it stores a complete snapshot of the backed up directory as loose files that you can navigate without special software. Time Machine required me to start from scratch one too many times on my DroboFS for me to rely on it.
+Trunkfish's advantage over Time Machine is that it does not use a proprietary storage format. Instead it stores a complete snapshot of the backed up directory as loose files that you can navigate without special software.
 
-Trunkfish's advantage over rsnapshot is that it does not require running the software on the server ( which is not possible on a DroboFS ), it's much easier to setup, and it uses absolute dates on backups, rather than relative ones.
+Trunkfish's advantage over rsnapshot is that it does not require running the software on the server ( which is not possible on a DroboFS ), it's much easier to setup, and it uses absolute dates on backups rather than relative ones.
 
-Another advantage of Trunkfish is that it should be relatively easy code to read and understand how it works.
-
-The downside to Trunkfish is that there's no GUI, and it doesn't account for every usage case, although a goal is to make it as fault-tolerant as possible.
+The downside to Trunkfish is that there's no GUI, and it doesn't account for every usage case, although one of the goals is to make it as fault-tolerant as possible.
 
    Files that go with this script:
 
@@ -35,3 +37,18 @@ The downside to Trunkfish is that there's no GUI, and it doesn't account for eve
 
   Email:   M8R-u8t2l4 AT mailinator DOT com
 
+HOW DO I USE TRUNKFISH?
+
+1. First, read this README.
+
+2. Next, copy all of these files into a permanent new home, such as ~/Trunkfish/
+
+3. Edit trunkfish.cfg to suit your backup. In the least you'll need to change the backup destination to match the name of the directory you'll be backing up into.
+
+If you want automatic backups, continue the steps, otherwise skip to step 7.
+
+4. You'll need password-less ssh access to your server. TODO: DESCRIBE.
+
+5. You'll need a launchd service installed. TODO: DESCRIBE.
+
+6. run trunkfi.sh for the first time. TODO: DESCRIBE.

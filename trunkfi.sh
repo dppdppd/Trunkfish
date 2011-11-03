@@ -165,8 +165,8 @@ do
     PrevDate=$(date -v -${_days}d +"$DateFormat")
 done
 
-if [ -n $NEWBACKUP ]; then
-    PrevDate="NONE"
+if [ -n "$NEWBACKUP" ]; then
+    PrevDate=""
 fi
 
 #========================================================
@@ -174,8 +174,10 @@ fi
 #========================================================
 echo
 echo ------------------------------------------------------------------------------
+echo Working variables
+echo ------------------------------------------------------------------------------
 echo "Today's date:  $Today"
-echo "Last backup:   $PrevDate";;
+echo "Last backup:   $PrevDate"
 echo "Backing up:    $BackupDir"
 echo "Destination:   $RemoteDir"
 echo "Server user:   $ServerUser"
@@ -186,7 +188,7 @@ echo "Lock File:     $LockPath"
 echo "Excludes File: $ExcludesPath"
 echo ------------------------------------------------------------------------------
 echo
-echo "Exclude file contents:"
+echo "Exclusions:"
 cat $ExcludesPath
 echo ------------------------------------------------------------------------------
 echo
@@ -216,52 +218,33 @@ fi
 #========================================================
 # Save off weekly, monthly, yearly, copies
 #========================================================
-# If we haven't saved off a backup in a week/month/year, then save one. The trap deletes the partial dir if the copy fails.
 
-function trap_weeklybackup() {
-    echo "\t $(TimeStamp) Aborting weekly save..."
-    $DRYRUN ssh ${ServerUser}@${Server} "rm -r -f ${RemotePath}.w"
-}
+_backupmoved=0
 
-function trap_monthlybackup() {
-    echo "\t $(TimeStamp) Aborting monthly save..."
-    $DRYRUN ssh ${ServerUser}@${Server} "rm -r -f ${RemotePath}.m"
-}
-
-function trap_yearlybackup() {
-    echo "\t $(TimeStamp) Aborting yearly save..."
-    $DRYRUN ssh ${ServerUser}@${Server} "rm -r -f ${RemotePath}.y"
-}
-
-if [ 0 -ne $W_Hist ]; then
-    echo "\t $(TimeStamp) Checking if it is time to save off a weekly backup..."
-    if [ -z `ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"` ]; then
-        echo "\t $(TimeStamp) Saving off a weekly backup..."
-        trap trap_weeklybackup INT TERM EXIT
-        $DRYRUN ssh ${ServerUser}@${Server} "cp -al ${RemotePath}.d ${RemotePath}.w"
-        trap - INT TERM EXIT
-    fi
-fi
-
-if [ 0 -ne $M_Hist ]; then
-    echo "\t $(TimeStamp) Checking if it is time to save off a monthly backup..."
-    if [ -z `ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"` ]; then
-        echo "\t $(TimeStamp) Saving off a monthly backup..."
-        trap trap_monthlybackup INT TERM EXIT
-        $DRYRUN ssh ${ServerUser}@${Server} "cp -al ${RemotePath}.d ${RemotePath}.m"
-        trap - INT TERM EXIT
-
-    fi
-fi
-
-if [ 0 -ne $Y_Hist ]; then
-    echo "\t $(TimeStamp) Checking if it is time to save off a yearly backup..."
-    if [ -z `ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"` ]; then
+if [ 0 -ne $Y_Hist ] && [ 0 -eq $_backupmoved ]; then
+    echo "\t $(TimeStamp) Checking if it is time to save a yearly backup..."
+    if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]; then
         echo "\t $(TimeStamp) Saving off a yearly backup..."
-        trap trap_yearlybackup INT TERM EXIT
-        $DRYRUN ssh ${ServerUser}@${Server} "cp -al ${RemotePath}.d ${RemotePath}.y"
-        trap - INT TERM EXIT
+         $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.y"
+         _backupmoved=1
     fi
+fi
+if [ 0 -ne $M_Hist ] && [ 0 -eq $_backupmoved ]; then
+    echo "\t $(TimeStamp) Checking if it is time to save a monthly backup..."
+    if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]; then
+        echo "\t $(TimeStamp) Saving off a monthly backup..."
+        $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.m"
+        _backupmoved=1
+    fi
+fi
+if [ 0 -ne $W_Hist ] && [ 0 -eq $_backupmoved ]; then
+    echo "\t $(TimeStamp) Checking if it is time to save a weekly backup..."
+    if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]; then
+        echo "\t $(TimeStamp) Saving off a weekly backup..."
+         $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.w"
+         _backupmoved=1
+    fi
+
 fi
 
 #========================================================
@@ -270,22 +253,22 @@ fi
 
 trap "exit 1" ERR
 if [ -z $NEWBACKUP ]; then
-if [ $D_Hist -gt -1 ]; then 
-echo "\t $(TimeStamp) Searching for daily backups older than $D_Hist days to delete..."
-ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f"
-fi
-if [ $W_Hist -gt -1 ]; then
-echo "\t $(TimeStamp) Searching for weekly backups older than $W_Hist weeks to delete..."
-ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f"
-fi
-if [ $M_Hist -gt -1 ]; then
-echo "\t $(TimeStamp) Searching for monthly backups older than $M_Hist weeks to delete..."
-ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f"
-fi
-if [ $Y_Hist -gt -1 ]; then
-echo "\t $(TimeStamp) Searching for yearly backups older than $Y_Hist years to delete..."
-ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f"
-fi
+    if [ $D_Hist -gt -1 ]; then 
+        echo "\t $(TimeStamp) Searching for daily backups older than $D_Hist days to delete..."
+        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f"
+    fi
+    if [ $W_Hist -gt -1 ]; then
+        echo "\t $(TimeStamp) Searching for weekly backups older than $W_Hist weeks to delete..."
+        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f"
+    fi
+    if [ $M_Hist -gt -1 ]; then
+        echo "\t $(TimeStamp) Searching for monthly backups older than $M_Hist weeks to delete..."
+        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f"
+    fi
+    if [ $Y_Hist -gt -1 ]; then
+        echo "\t $(TimeStamp) Searching for yearly backups older than $Y_Hist years to delete..."
+        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f"
+     fi
 fi
 trap - ERR
 
