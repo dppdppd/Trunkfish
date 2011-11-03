@@ -56,6 +56,8 @@ WHAT'S THE STATUS OF TRUNKFISH DEVELOPMENT?
 ==========================================
    MY TODO:
         - require root for setup scripts
+        - create cfg on first run
+        - add lots of explanation text to firsttime script
 
   Email:   M8R-u8t2l4 AT mailinator DOT com
 
