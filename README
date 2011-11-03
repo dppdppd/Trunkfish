@@ -55,9 +55,6 @@ WHAT DOES TRUNKFISH CONSIST OF?
 WHAT'S THE STATUS OF TRUNKFISH DEVELOPMENT?
 ==========================================
    MY TODO:
-        - add a script that unloads and deletes plist
-        - merge setup scripts into this one
-        - make sure dry run is enforced throughout all scripts
         - require root for setup scripts
 
   Email:   M8R-u8t2l4 AT mailinator DOT com

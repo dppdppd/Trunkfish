@@ -25,56 +25,164 @@ fi
 # Load settings
 . "$SettingsPath"
 
-# Today
-Today=$(date +$DateFormat)
+#==============================================================================
+# INSTALLATION ROUTINES
 
-for var in "$@"; do
-    case "$var" in
+function first_time(){
 
-        --dryrun)       DRYRUN="echo DRY RUN: -- "; NOLOGS=1;;
+echo "Set up password-less ssh?"
+read SETUPSSH_YN
+if [ "$SETUPSSH_YN" = "y" ]; then
+    setup_ssh
+fi
+echo "schedule?"
+read SCHEDULE_YN
+if [ "$SCHEDULE_YN" = "y" ]; then
+    schedule_launchd
+fi
+echo "You'll need to back up once manually. Do this now?"
+read BACKUPNOW_YN
+if [ "$BACKUPNOW_YN" = "y" ]; then
+    NEWBACKUP=1
+else
+    echo "You'll need to back up once manually before you can automate it. When you're ready type 'sudo ./trunkfi.sh -new'"
+    exit 0
+fi
+}
 
-        --nologs)       NOLOGS=1;;
+function setup_ssh(){
 
-        --setup-ssh)    . $SSHSetupScriptPath; exit 0;;
+    ThisUser=$(id -u -n)
 
-        --schedule)     . $SchedSetupScriptPath; exit 0;;
+    ThisComputer=$(hostname)
 
-        --unschedule)   . $SchedSetupScriptPath; exit 0;;
-
-        --new)          NEWBACKUP=1;;
-
-        --firsttime)    FIRSTTIME=1;;
-
-        *) 
+    rHOME="~$ThisUser"
+    
+    echo
+    echo "\t The purpose of this script is to allow you to connect to the Server"
+    echo "\t without requiring entering the SSH password every time, since it is"
+    echo "\t expected that you'll want to automate the backups."
+    echo
+    echo "\t It will create a key for the root user on this machine to SSH as"
+    echo "\t $ServerUser into $Server in order to do the backups."
+    echo
+    echo "\t In order to do that, we'll need to SSH a few times into Server, and"
+    echo "\t you'll need to provide the password for $ServerUser on $Server several times."
+    echo
+    read -p "Press enter to start or Ctrl-C to exit..."
+    echo
+    
+    echo "\t Searching for $AuthorizedKeys on the Server."
+    echo
+    if [ 0 -ne `ssh ${ServerUser}@${Server} test -f "$AuthorizedKeys" ;echo \$?` ]; then
+        echo
+        echo "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file."
+        echo
+        $DRYRUN ssh ${ServerUser}@${Server} "mkdir $HOME/.ssh" 2> /dev/null
+        echo
+        echo "\t Creating $AuthorizedKeys on Server."
+        echo
+        $DRYRUN ssh ${ServerUser}@${Server} "touch "$AuthorizedKeys""
+        echo
+    else
+        echo
+        echo "\t $AuthorizedKeys exists."
+        echo "\t Searching for an entry for ${ThisUser}@${ThisComputer} in $HOME/.ssh/authorized_keys."
+        echo
+        if [ `ssh ${ServerUser}@${Server} "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]; then
             echo
-            echo "Valid options:"
+            echo "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
             echo
-            echo "--firsttime   Use this to setup your routine backups."
-            echo "--schedule    Specify the hour of day to backup, where '0' is Midnight and '13' is 1pm."
-            echo "--unschedule  Disable the daily scheduled backup."
-            echo "--new         Use this to skip searching for a previous backup to link to."
-            echo "--dryrun      Use this to confirm the script is set up correctly. Nothing will actually execute."
-
+            exit 1
+        else
             echo
-            exit 1;;
-    esac
-done
+            echo "\t ${ThisUser}@${ThisComputer} doesn't have an entry in $HOME/.ssh/authorized_keys."
+            echo "\t Let's add one."
+            echo
+        fi
+    fi
+    
+    if [ 0 -eq `eval test -f $rHOME/.ssh/id_rsa.pub; echo \$?` ]; then
+        echo
+        echo "\t I found an existing public key here: $HOME/.ssh/id_rsa.pub."
+        echo "\t I will copy it onto the Server."
+        echo
+    else
+        echo
+        echo "\t I didn't find a public key for you. You will need to generate one."
+        echo "\t I'm going to execute '$SSHKeyGen' for you. Follow the prompts."
+        echo "\t I recommend just hitting enter to get the defaults."
+        echo "\t If you pick a non-default location for the key file, you'll need to"
+        echo "\t edit this script, since I assume it's $HOME/.ssh/id_rsa.pub and attempt to"
+        echo "\t copy it from there."
+        echo
+        $DRYRUN $SSHKeyGen
+    fi
+    
+    $DRYRUN eval "cd $rHOME/.ssh"
+    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' id_rsa.pub ${ServerUser}@${Server}:~/.ssh/tmp
+    $DRYRUN ssh ${ServerUser}@${Server} "echo >> "$AuthorizedKeys" && cat ~/.ssh/tmp >> "$AuthorizedKeys" && rm ~/.ssh/tmp"
+    
+    echo
+    echo "\t If there weren't any errors, you should now be able to ssh into ${ServerUser}@${Server} without password prompt."
+    echo
+    echo "\t To try it, type \"ssh ${ServerUser}@${Server}\" at the command prompt."
+    echo "\t There should be no password prompt."
+    echo "\t Type \"exit\" when you're done."
+    echo
+}
 
-# copy filters from Settings into an exclude file for rsync.
-echo "$RsyncFilter" > $ExcludesPath
+function reset_launchd(){
+    $DRYRUN launchctl stop com.trunkfish.backup 2>/dev/null
+    $DRYRUN launchctl unload "$PlistPath" 2>/dev/null
+}
 
-# number of days to search back for a backup to link to before giving up.
-SearchDays=30
+function uninstall_launchd(){
+    reset_launchd
+    rm -f $PlistPath
+}
 
-# Full backup path ( dir/date )
-RemotePath=$RemoteDir"/"$Today
+function schedule_launchd(){
 
-# Temp variable for searching previous backup
-_days=1
+    echo "When to backup?"
+    read PlistHour
 
-# Last backup
-PrevDate=$(date -v -${_days}d +"$DateFormat")
+    Plist="
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+    <key>Label</key>
+    <string>com.trunkfish.backup</string>
 
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>"$ScriptPath"</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>$PlistHour</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+</dict>
+</plist>
+"
+    if [ -z "$DRYRUN" ]; then
+        echo "$Plist" > "$PlistPath"
+    else
+        echo "$Plist"
+    fi
+
+    reset_launchd
+    $DRYRUN launchctl load "$PlistPath"
+    $DRYRUN launchctl start com.trunkfish.backup
+}
+
+#==============================================================================
 # If backup fails, delete partial backup and clean up.
 function trap_backup() {
     trap - ERR
@@ -88,11 +196,62 @@ function trap_backup() {
     $DRYRUN rm "$LockPath" &>/dev/null
     exit 1
 }
+#==============================================================================
+
+for var in "$@"; do
+    case "$var" in
+
+        --dryrun)       DRYRUN="echo DRY RUN: -- "; NOLOGS=1;;
+
+        --nologs)       NOLOGS=1;;
+
+        --setup-ssh)    setup_ssh; exit 0;;
+
+        --schedule)     schedule_launchd; exit 0;;
+
+        --unschedule)   uninstall_launchd; exit 0;;
+
+        --new)          NEWBACKUP=1;;
+
+        --firsttime)    first_time;;
+
+        *) 
+            echo
+            echo "Valid options:"
+            echo
+            echo "--firsttime   Use this to setup your routine backups."
+            echo "--schedule    Starts a task that runs trunkfish every day at a certain hour."
+            echo "--unschedule  Disable the daily scheduled backup task."
+            echo "--dry-run     Use this to confirm the script is set up correctly. Nothing will actually execute."
+            echo
+            exit 1;;
+    esac
+done
+
+# copy filters from Settings into an exclude file for rsync.
+if [ -z "$DRYRUN" ]; then
+    echo "$RsyncFilter" > $ExcludesPath
+fi
+
+# number of days to search back for a backup to link to before giving up.
+SearchDays=30
+
+# Today
+Today=$(date +$DateFormat)
+
+# Full backup path ( dir/date )
+RemotePath=$RemoteDir"/"$Today
+
+# Temp variable for searching previous backup
+_days=1
+
+# Last backup
+PrevDate=$(date -v -${_days}d +"$DateFormat")
 
 # Validate directories
 if [ ! -e "$BackupDir" ]; then
-echo "\t $(TimeStamp) The directory you are attempting to back up, \"$BackupDir\", does not exist."
-exit 1
+    echo "\t $(TimeStamp) The directory you are attempting to back up, \"$BackupDir\", does not exist."
+    exit 1
 fi
 if [ 0 -ne `ssh ${ServerUser}@${Server} test -d "$RemoteDir" ;echo \$?` ]; then
     echo "\t $(TimeStamp) $RemoteDir does not exist. If you're backing up to a DroboFS, use the Dashboard to create the Share."
@@ -133,6 +292,7 @@ if [ -z "$DRYRUN" ]; then
     echo "$$" >"$LockPath"
 
 fi
+
 echo
 echo
 echo "\t $(TimeStamp) Starting..."
@@ -141,7 +301,9 @@ echo "\t $(TimeStamp) Starting..."
 # Find the previous backup, to which we're going to link against. 
 #========================================================
 
-if [ -z $NEWBACKUP ]; then echo "\t $(TimeStamp) Searching for the most recent backup, to which we're going to link today's backup..."; fi
+if [ -z $NEWBACKUP ]; then 
+    echo "\t $(TimeStamp) Searching for the most recent backup, to which we're going to link today's backup..."
+fi
 
 # Check if there already exists a backup for today. If so, move it to ".incomplete" and backup into it, picking up whatever has changed since.
 if [ 0 -eq `ssh ${ServerUser}@${Server} test -d "$RemoteDir"/"$Today".d ;echo \$?` ]; then
@@ -193,7 +355,6 @@ echo ---------------------------------------------------------------------------
 echo
 echo "Exclusions:"
 cat $ExcludesPath
-echo ------------------------------------------------------------------------------
 echo
 
 #========================================================
@@ -224,7 +385,7 @@ fi
 _backupmoved=0
 
 if [ 0 -ne $Y_Hist ] && [ 0 -eq $_backupmoved ]; then
-    echo "\t $(TimeStamp) Checking if it is time to save a yearly backup..."
+    echo \t $(TimeStamp) Checking if it is time to save a yearly backup...
     if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]; then
         echo "\t $(TimeStamp) Saving off a yearly backup..."
          $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.y"
@@ -232,7 +393,7 @@ if [ 0 -ne $Y_Hist ] && [ 0 -eq $_backupmoved ]; then
     fi
 fi
 if [ 0 -ne $M_Hist ] && [ 0 -eq $_backupmoved ]; then
-    echo "\t $(TimeStamp) Checking if it is time to save a monthly backup..."
+    echo \t $(TimeStamp) Checking if it is time to save a monthly backup...
     if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]; then
         echo "\t $(TimeStamp) Saving off a monthly backup..."
         $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.m"
@@ -240,7 +401,7 @@ if [ 0 -ne $M_Hist ] && [ 0 -eq $_backupmoved ]; then
     fi
 fi
 if [ 0 -ne $W_Hist ] && [ 0 -eq $_backupmoved ]; then
-    echo "\t $(TimeStamp) Checking if it is time to save a weekly backup..."
+    echo \t $(TimeStamp) Checking if it is time to save a weekly backup...
     if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]; then
         echo "\t $(TimeStamp) Saving off a weekly backup..."
          $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.w"
