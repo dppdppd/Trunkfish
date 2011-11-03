@@ -43,15 +43,18 @@ for var in "$@"; do
 
         --new)          NEWBACKUP=1;;
 
+        --firsttime)    FIRSTTIME=1;;
+
         *) 
             echo
             echo "Valid options:"
             echo
-            echo "--setup-SSH   Set up password-less SSH for automated backup."
+            echo "--firsttime   Use this to setup your routine backups."
             echo "--schedule    Specify the hour of day to backup, where '0' is Midnight and '13' is 1pm."
             echo "--unschedule  Disable the daily scheduled backup."
-            echo "--new         Use this the first time you back up to skip searching for a previous backup to link to."
+            echo "--new         Use this to skip searching for a previous backup to link to."
             echo "--dryrun      Use this to confirm the script is set up correctly. Nothing will actually execute."
+
             echo
             exit 1;;
     esac
@@ -202,7 +205,6 @@ echo
 trap trap_backup ERR
 $DRYRUN rsync --stats --bwlimit=1000 --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -avz --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
 trap - ERR
-
 
 # backup was successful. Rename it.
 echo "\t $(TimeStamp) backup completed successfully. Renaming ${RemotePath}.incomplete to ${RemotePath}.d"
