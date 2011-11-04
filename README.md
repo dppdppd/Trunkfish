@@ -30,7 +30,7 @@ The downside to __Trunkfish__ is that there's no GUI, no large community of user
 ## How do I use Trunkfish?
 
   1. First, read this README.
-  2. Copy all of these files into a permanent new home, such as ~/Trunkfish/, or
+  2. Copy all of these files into a permanent new home, such as ~/Trunkfish/, or  
     git clone git://github.com/idomagal/Trunkfish.git
   3. Edit trunkfish.cfg to suit your backup.
   4. type 'sudo ./trunkfi.sh --first-time'
