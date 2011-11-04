@@ -47,7 +47,7 @@ _tail -f ~trunkfish.log_
 
 #### What does the .d, .w, .m, and .y extensions mean?
 
-They represent daily, weekly, monthly, and yearly backups, respectively. Eventually the more frequent backup dirs get deleted and only the less frequent ones remain. By default __Trunkfish__ keeps 30 daily backups, 26 weekly backups, and unlimited number of monthly and yearly backups.
+They represent daily, weekly, monthly, and yearly backups, respectively. Eventually the more frequent backup directories get deleted and only the less frequent ones remain, in order to conserve space. By default __Trunkfish__ keeps 30 daily backups, 26 weekly backups, and never deletes monthly or yearly backups. You can change these numbers in trunkfish.cfg.
 
 ## What does Trunkfish consist of?
 
