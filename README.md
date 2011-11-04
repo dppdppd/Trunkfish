@@ -30,8 +30,9 @@ The downside to __Trunkfish__ is that there's no GUI, no large community of user
 ## How do I use Trunkfish?
 
   1. First, read this README.
-  2. Next, copy all of these files into a permanent new home, such as ~/Trunkfish/
-  3. Edit trunkfish.cfg to suit your backup. In the least you'll need to change the backup destination to match the name of the directory you'll be backing up into.
+  2. Copy all of these files into a permanent new home, such as ~/Trunkfish/, or
+    git clone git://github.com/idomagal/Trunkfish.git
+  3. Edit trunkfish.cfg to suit your backup.
   4. type 'sudo ./trunkfi.sh --first-time'
 
 
@@ -49,7 +50,7 @@ Files that go with this script:
                                  since the 'find' on those doesn't support '-links'
 
 
-Files that get generated during every backup:
+Temporary files that get generated during every backup:
 
     *  ~trunkfish_excludes.txt - A temporary txt file that contains rsync filters for the backup.
     *  ~trunkfish.log          - A temporary log of the backup events.
