@@ -30,9 +30,9 @@ The downside to __Trunkfish__ is that there's no GUI, no large community of user
 ## How do I use Trunkfish?
 
   1. First, read this README.
-  2. type _git clone git://github.com/idomagal/Trunkfish.git_
+  2. _git clone git://github.com/idomagal/Trunkfish.git_
   3. Edit trunkfish.cfg to suit your backup.
-  4. type _sudo ./trunkfi.sh --first-time_
+  4. _sudo ./trunkfi.sh --first-time_
 
 
 ## What does Trunkfish consist of?
