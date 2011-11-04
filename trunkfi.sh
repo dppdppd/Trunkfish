@@ -4,6 +4,9 @@
 #  Copyright 2011 Ido Magal. All rights reserved. 
 #==============================================================================
 
+# Store os for os-specific commands
+OS=${OSTYPE//[0-9.]/}
+
 # Directory where this script is located.
 ScriptDir="$( cd -P "$( dirname "$0" )" && pwd )"
 
@@ -246,7 +249,11 @@ RemotePath=$RemoteDir"/"$Today
 _days=1
 
 # Last backup
-PrevDate=$(date -v -${_days}d +"$DateFormat")
+if [ $OS == "darwin" ]; then
+		PrevDate=$(date -v -${_days}d +"$DateFormat")
+else
+		PrevDate=$(date -d "-${_days} day" +"$DateFormat")
+fi
 
 # Validate directories
 if [ ! -e "$BackupDir" ]; then
