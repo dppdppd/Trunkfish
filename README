@@ -6,7 +6,7 @@
                 USE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR READING AND UNDERSTANDING
                 THE CODE IN THIS SCRIPT AND NO GUARANTEE IS GIVEN OR IMPLIED.
                
-                THIS CODE MAY ERASE EVERYTHING, ANYWHERE, AT ANY MOMENT.
+                THIS CODE MAY ERASE ANYTHING, ANYWHERE, AT ANY MOMENT.
 =====================================================================================================================
 
 WHAT IS TRUNKFISH?
@@ -20,7 +20,7 @@ I wrote Trunkfish because I wanted a periodic hardlinked-based backup system tha
 
 Trunkfish's advantage over Time Machine is that it does not use a proprietary storage format. It just creates a directory for each day dated as such (e.g. "/2011-11-1/") which contains a complete snapshot of the backed up computer. Thanks to the magic of hardlinks, it only uses as much space as necessary to save the files that have changed. Just like rsnapshot.
 
-However Trunkfish's advantage over rsnapshot is that it is client-driven and does not require running the software on the server (which is not possible on a DroboFS). Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
+However Trunkfish's advantage over rsnapshot is that it is client-driven and does not require running the software on the server. Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
 
 The downside to Trunkfish is that there's no GUI, no large community of users, and it doesn't account for many usage cases (yet).
 
