@@ -28,22 +28,26 @@ __Trunkfish__ is different from rsnapshot in that it is client-driven and does n
 ## How do I use Trunkfish?
 
 
-### How do I install Trunkfish?
+#### How do I install Trunkfish?
 
   1. First, read this README.
   2. _git clone git://github.com/idomagal/Trunkfish.git_
   3. Edit trunkfish.cfg to suit your backup.
   4. _sudo ./trunkfi.sh --first-time_
 
-### How can I watch Trunkfish progress?
+#### How can I watch Trunkfish progress?
 
 _tail -f ~trunkfish.log_
 
-### How do I know if the backup succeeded?
+#### How do I know if the backup succeeded?
 
   * If the backup failed, there will be a directory with a .incomplete or .aborted extension in your backup dir. You can safely delete them.
   * Look at ~trunk_err.log to determine what may have gone wrong.
+  * Otherwise there'll be a directory named with date and a .d, .w, .m, and or .y extensions. E.g. '2011-11-1.d'
 
+#### What does the .d, .w, .m, and .y extensions mean?
+
+They represent daily, weekly, monthly, and yearly backups, respectively. Eventually the more frequent backup dirs get deleted and only the less frequent ones remain. By default __Trunkfish__ keeps 30 daily backups, 26 weekly backups, and unlimited number of monthly and yearly backups.
 
 ## What does Trunkfish consist of?
 
