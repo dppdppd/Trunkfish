@@ -41,8 +41,9 @@ _tail -f ~trunkfish.log_
 
 ### How do I know if the backup succeeded?
 
-  1. If the backup failed, there will be a directory with a .incomplete or .aborted extension in your backup dir.
-  You can safely delete them. Look at ~trunk_err.log to determine what may have gone wrong.
+  * If the backup failed, there will be a directory with a .incomplete or .aborted extension in your backup dir.
+  * You can safely delete them.
+  * Look at ~trunk_err.log to determine what may have gone wrong.
 
 
 ## What does Trunkfish consist of?
