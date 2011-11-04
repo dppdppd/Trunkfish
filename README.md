@@ -27,10 +27,21 @@ __Trunkfish__ is different from rsnapshot in that it is client-driven and does n
 
 ## How do I use Trunkfish?
 
+### How do I install Trunkfish?
+
   1. First, read this README.
   2. _git clone git://github.com/idomagal/Trunkfish.git_
   3. Edit trunkfish.cfg to suit your backup.
   4. _sudo ./trunkfi.sh --first-time_
+
+### How can I watch Trunkfish progress?
+
+_tail -f ~trunkfish.log_
+
+### How do I know if the backup succeeded?
+
+  1. If the backup failed, there will be a directory with a .incomplete or .aborted extension in your backup dir.
+  You can safely delete those.
 
 
 ## What does Trunkfish consist of?
