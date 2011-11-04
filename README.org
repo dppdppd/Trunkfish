@@ -1,14 +1,16 @@
 #+TITLE: TRUNKFISH
-=====================================================================================================================
+#+BEGIN_CENTER
+-----
   Copyright 2011 Ido Magal. All rights reserved. 
-=====================================================================================================================
-                DISCLAIMER: 
+-----
+DISCLAIMER: 
 
-                USE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR READING AND UNDERSTANDING
-                THE CODE IN THIS SCRIPT AND NO GUARANTEE IS GIVEN OR IMPLIED.
-               
-                THIS CODE MAY ERASE ANYTHING, ANYWHERE, AT ANY MOMENT.
-=====================================================================================================================
+USE AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR READING AND UNDERSTANDING
+THE CODE IN THIS SCRIPT AND NO GUARANTEE IS GIVEN OR IMPLIED.
+              
+THIS CODE MAY ERASE ANYTHING, ANYWHERE, AT ANY MOMENT.
+-----
+#+END_CENTER
 
 WHAT IS TRUNKFISH?
 ==================
