@@ -13,7 +13,7 @@ Copyright 2011 Ido Magal. All rights reserved. M8R-u8t2l4 AT mailinator DOT com
 
 ## What is Trunkfish?
 
-__Trunkfish__ is a script that creates periodic backups of the machine executing it onto a separate machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work for backing up any posix device onto any other posix device, provided they have the requisite programs. 
+__Trunkfish__ is a script that creates periodic file backups of the machine executing it onto a separate machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work for backing up any posix device onto any other posix device, provided they have the requisite programs. 
 
 
 ## Why Trunkfish?
@@ -24,7 +24,7 @@ __Trunkfish__'s advantage over Time Machine is that it does not use a proprietar
 
 However __Trunkfish__'s advantage over rsnapshot is that it is client-driven and does not require running the software on the server. Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
 
-The downside to __Trunkfish__ is that there's no GUI, no large community of users, and it doesn't account for many usage cases (yet).
+The downside to __Trunkfish__ is that it only backs up files, not disk images, and there's no GUI.
 
 
 ## How do I use Trunkfish?
