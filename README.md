@@ -1,6 +1,7 @@
 # Trunkfi.sh
 
-Copyright 2011 Ido Magal. All rights reserved. 
+Copyright 2011 Ido Magal. All rights reserved. M8R-u8t2l4 AT mailinator DOT com
+
 
     DISCLAIMER:
 
@@ -63,7 +64,5 @@ TODO:
 *  Create cfg on first run
 *  Dynamically choose rsync exclusions based on OS
 *  Add scheduling support for cygwin
-
-Email:   M8R-u8t2l4 AT mailinator DOT com
 
 
