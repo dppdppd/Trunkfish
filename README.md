@@ -43,7 +43,7 @@ _tail -f ~trunkfish.log_
 
   * If the backup failed, there will be a directory with a .incomplete or .aborted extension in your backup dir. You can safely delete them.
   * Look at ~trunk_err.log to determine what may have gone wrong.
-  * Otherwise there'll be a directory named with date and a .d, .w, .m, and or .y extensions. E.g. '2011-11-1.d'
+  * Otherwise, if the backup was successful, there'll be a directory named with date and a .d, .w, .m, and or .y extensions. E.g. '2011-11-31.d'
 
 #### What does the .d, .w, .m, and .y extensions mean?
 
