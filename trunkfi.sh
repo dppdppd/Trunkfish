@@ -21,8 +21,8 @@ StdLogPath="$ScriptDir/~trunkfish.log"
 ErrLogPath="$ScriptDir/~trunk_err.log"
 
 if [ ! -e "$SettingsPath" ]; then
-echo "\t $SettingsPath is missing. Cannot continue."
-exit 1
+    echo "\t $SettingsPath is missing. Cannot continue."
+    exit 1
 fi
 
 # Load settings
@@ -33,24 +33,31 @@ fi
 
 function first_time(){
 
-echo "Set up password-less ssh?"
-read SETUPSSH_YN
-if [ "$SETUPSSH_YN" = "y" ]; then
-    setup_ssh
-fi
-echo "schedule?"
-read SCHEDULE_YN
-if [ "$SCHEDULE_YN" = "y" ]; then
-    schedule_launchd
-fi
-echo "You'll need to back up once manually. Do this now?"
-read BACKUPNOW_YN
-if [ "$BACKUPNOW_YN" = "y" ]; then
-    NEWBACKUP=1
-else
-    echo "You'll need to back up once manually before you can automate it. When you're ready type 'sudo ./trunkfi.sh -new'"
-    exit 0
-fi
+    echo "In order to automate backups, we need to be able to ssh into the server without a password. Would you like me to set up password-less ssh now?"
+    read SETUPSSH_YN
+    if [ "$SETUPSSH_YN" = "y" ]; then
+        setup_ssh
+    else
+        echo "You can set up password-less ssh later by typing 'sudo ./trunkfi.sh --setup-ssh'"
+    fi
+
+    echo "In order to automate backups, you need to create a daemon that will run in the backround. Would you like to do so now?"
+    read SCHEDULE_YN
+    if [ "$SCHEDULE_YN" = "y" ]; then
+        schedule_launchd
+        echo "You can disable the backup daemon later by typing 'sudo ./trunkfi.sh --unschedule'"
+    else
+        echo "You can set up a daemon later by running 'sudo ./trunkfi.sh --schedule"
+    fi
+
+    echo "Before you can automate backups, you'll need to back up once manually. Do you want to do this now?"
+    read BACKUPNOW_YN
+    if [ "$BACKUPNOW_YN" = "y" ]; then
+        NEWBACKUP=1
+    else
+        echo "You can backup once manually by typping 'sudo ./trunkfi.sh -new'"
+        exit 0
+    fi
 }
 
 function setup_ssh(){
@@ -147,33 +154,33 @@ function uninstall_launchd(){
 
 function schedule_launchd(){
 
-    echo "When to backup?"
+    echo "Enter a time to backup in the form of a military hour with no minutes. Valid values are '0' to '23' where 0 is midnight and 23 is 11pm."
     read PlistHour
 
     Plist="
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-<dict>
-    <key>Label</key>
-    <string>com.trunkfish.backup</string>
+        <?xml version=\"1.0\" encoding=\"UTF-8\"?>
+        <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+        <plist version=\"1.0\">
+        <dict>
+        <key>Label</key>
+        <string>com.trunkfish.backup</string>
 
-    <key>ProgramArguments</key>
-    <array>
+        <key>ProgramArguments</key>
+        <array>
         <string>/bin/bash</string>
         <string>"$ScriptPath"</string>
-    </array>
+        </array>
 
-    <key>StartCalendarInterval</key>
-    <dict>
+        <key>StartCalendarInterval</key>
+        <dict>
         <key>Hour</key>
         <integer>$PlistHour</integer>
         <key>Minute</key>
         <integer>0</integer>
-    </dict>
-</dict>
-</plist>
-"
+        </dict>
+        </dict>
+        </plist>
+        "
     if [ -z "$DRYRUN" ]; then
         echo "$Plist" > "$PlistPath"
     else
@@ -194,8 +201,8 @@ function trap_backup() {
     $DRYRUN ssh ${ServerUser}@${Server} "nohup rm -r -f ${RemotePath}.aborted.$$ &" &>/dev/null
 
     # save the logs of the failed backup  
-    $DRYRUN mv $StdLogPath $ScriptDir"/"BACKUP_FAILED."${Today}".log &>/dev/null
-    $DRYRUN mv $StdErr $ScriptDir"/"BACKUP_ERR_FAILED."${Today}".log &>/dev/null
+    $DRYRUN mv $StdLogPath $ScriptDir"/"~TRUNKFISH_FAILED."${Today}".log &>/dev/null
+    $DRYRUN mv $StdErr $ScriptDir"/"~TRUNK_ERR_FAILED."${Today}".log &>/dev/null
     $DRYRUN rm "$LockPath" &>/dev/null
     exit 1
 }
@@ -204,7 +211,7 @@ function trap_backup() {
 for var in "$@"; do
     case "$var" in
 
-        --dryrun)       DRYRUN="echo DRY RUN: -- "; NOLOGS=1;;
+        --dry-run)      DRYRUN="echo DRY RUN: -- "; NOLOGS=1;;
 
         --nologs)       NOLOGS=1;;
 
@@ -216,18 +223,19 @@ for var in "$@"; do
 
         --new)          NEWBACKUP=1;;
 
-        --firsttime)    first_time;;
+        --first-time)   first_time;;
 
         *) 
-            echo
-            echo "Valid options:"
-            echo
-            echo "--firsttime   Use this to setup your routine backups."
-            echo "--schedule    Starts a task that runs trunkfish every day at a certain hour."
-            echo "--unschedule  Disable the daily scheduled backup task."
-            echo "--dry-run     Use this to confirm the script is set up correctly. Nothing will actually execute."
-            echo
-            exit 1;;
+        echo
+        echo "Valid options:"
+        echo
+        echo "--first-time  Use this to setup your routine backups."
+        echo "--schedule    Starts a daemon that runs trunkfish every day at a certain hour."
+        echo "--unschedule  Disable the daily scheduled backup daemon."
+        echo "--new         Backup without attempting to link to a previous backup."
+        echo "--dry-run     Use this to confirm the script is set up correctly. Nothing will actually execute."
+        echo
+        exit 1;;
     esac
 done
 
@@ -250,9 +258,9 @@ _days=1
 
 # Last backup
 if [ $OS == "darwin" ]; then
-		PrevDate=$(date -v -${_days}d +"$DateFormat")
+    PrevDate=$(date -v -${_days}d +"$DateFormat")
 else
-		PrevDate=$(date -d "-${_days} day" +"$DateFormat")
+    PrevDate=$(date -d "-${_days} day" +"$DateFormat")
 fi
 
 # Validate directories
@@ -327,42 +335,42 @@ do
         echo "Yes: Start a fresh backup with no linking."
         echo "No:  Keep searching for an even older backup."
         select yn in "Yes" "No";
-        do
-            case $yn in
-                Yes ) NEWBACKUP=1; break;;
-                No ) SearchDays=`expr $SearchDays + $SearchDays`; echo $SearchDays; break;;
-            esac
-        done
+do
+    case $yn in
+        Yes ) NEWBACKUP=1; break;;
+        No ) SearchDays=`expr $SearchDays + $SearchDays`; echo $SearchDays; break;;
+    esac
+done
     fi
     PrevDate=$(date -v -${_days}d +"$DateFormat")
-done
+    done
 
-if [ -n "$NEWBACKUP" ]; then
-    PrevDate=""
-fi
+    if [ -n "$NEWBACKUP" ]; then
+        PrevDate=""
+    fi
 
 #========================================================
 # Print working variables for debugging and the logs
 #========================================================
-echo
-echo ------------------------------------------------------------------------------
-echo Working variables
-echo ------------------------------------------------------------------------------
-echo "Today's date:  $Today"
-echo "Last backup:   $PrevDate"
-echo "Backing up:    $BackupDir"
-echo "Destination:   $RemoteDir"
-echo "Server user:   $ServerUser"
-echo "Server:        $Server"
-echo "Output Log:    $StdLogPath"
-echo "Error Log:     $ErrLogPath"
-echo "Lock File:     $LockPath"
-echo "Excludes File: $ExcludesPath"
-echo ------------------------------------------------------------------------------
-echo
-echo "Exclusions:"
-cat $ExcludesPath
-echo
+    echo
+    echo ------------------------------------------------------------------------------
+    echo Working variables
+    echo ------------------------------------------------------------------------------
+    echo "Today's date:  $Today"
+    echo "Last backup:   $PrevDate"
+    echo "Backing up:    $BackupDir"
+    echo "Destination:   $RemoteDir"
+    echo "Server user:   $ServerUser"
+    echo "Server:        $Server"
+    echo "Output Log:    $StdLogPath"
+    echo "Error Log:     $ErrLogPath"
+    echo "Lock File:     $LockPath"
+    echo "Excludes File: $ExcludesPath"
+    echo ------------------------------------------------------------------------------
+    echo
+    echo "Exclusions:"
+    cat $ExcludesPath
+    echo
 
 #========================================================
 # BACKUP happens here.
@@ -370,84 +378,84 @@ echo
 # Use trap to delete the partial backup if it doesn't complete.
 # If we don't delete it, the next backup will generate lots of duplicate files because it will link to this partial directory. We'd rather it link to the previous good backup.
 
-trap trap_backup ERR
-$DRYRUN rsync --stats --bwlimit=1000 --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -avz --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
-trap - ERR
+    trap trap_backup ERR
+    $DRYRUN rsync --stats --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -avz --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
+    trap - ERR
 
 # backup was successful. Rename it.
-echo "\t $(TimeStamp) backup completed successfully. Renaming ${RemotePath}.incomplete to ${RemotePath}.d"
-$DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.incomplete ${RemotePath}.d"
+    echo "\t $(TimeStamp) backup completed successfully. Renaming ${RemotePath}.incomplete to ${RemotePath}.d"
+    $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.incomplete ${RemotePath}.d"
 
 # Backup is done. Copy the logs into the backup dir.
-if [ -z $NOLOGS ]; then
-    echo "\t $(TimeStamp) Copying the logs..."
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.d/
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.d/
-fi
+    if [ -z $NOLOGS ]; then
+        echo "\t $(TimeStamp) Copying the logs..."
+        $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.d/
+        $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -p 22' "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.d/
+    fi
 
 #========================================================
 # Save off weekly, monthly, yearly, copies
 #========================================================
 
-_backupmoved=0
+    _backupmoved=0
 
-if [ 0 -ne $Y_Hist ] && [ 0 -eq $_backupmoved ]; then
-    echo \t $(TimeStamp) Checking if it is time to save a yearly backup...
-    if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]; then
-        echo "\t $(TimeStamp) Saving off a yearly backup..."
-         $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.y"
-         _backupmoved=1
+    if [ 0 -ne $Y_Hist ] && [ 0 -eq $_backupmoved ]; then
+        echo \t $(TimeStamp) Checking if it is time to save a yearly backup...
+        if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]; then
+            echo "\t $(TimeStamp) Saving off a yearly backup..."
+            $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.y"
+            _backupmoved=1
+        fi
     fi
-fi
-if [ 0 -ne $M_Hist ] && [ 0 -eq $_backupmoved ]; then
-    echo \t $(TimeStamp) Checking if it is time to save a monthly backup...
-    if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]; then
-        echo "\t $(TimeStamp) Saving off a monthly backup..."
-        $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.m"
-        _backupmoved=1
+    if [ 0 -ne $M_Hist ] && [ 0 -eq $_backupmoved ]; then
+        echo \t $(TimeStamp) Checking if it is time to save a monthly backup...
+        if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]; then
+            echo "\t $(TimeStamp) Saving off a monthly backup..."
+            $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.m"
+            _backupmoved=1
+        fi
     fi
-fi
-if [ 0 -ne $W_Hist ] && [ 0 -eq $_backupmoved ]; then
-    echo \t $(TimeStamp) Checking if it is time to save a weekly backup...
-    if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]; then
-        echo "\t $(TimeStamp) Saving off a weekly backup..."
-         $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.w"
-         _backupmoved=1
-    fi
+    if [ 0 -ne $W_Hist ] && [ 0 -eq $_backupmoved ]; then
+        echo \t $(TimeStamp) Checking if it is time to save a weekly backup...
+        if [ -z "`ssh ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]; then
+            echo "\t $(TimeStamp) Saving off a weekly backup..."
+            $DRYRUN ssh ${ServerUser}@${Server} "mv ${RemotePath}.d ${RemotePath}.w"
+            _backupmoved=1
+        fi
 
-fi
+    fi
 
 #========================================================
 # Clean up old backups
 #========================================================
 
-trap "exit 1" ERR
-if [ -z $NEWBACKUP ]; then
-    if [ $D_Hist -gt -1 ]; then 
-        echo "\t $(TimeStamp) Searching for daily backups older than $D_Hist days to delete..."
-        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f"
+    trap "exit 1" ERR
+    if [ -z $NEWBACKUP ]; then
+        if [ $D_Hist -gt -1 ]; then 
+            echo "\t $(TimeStamp) Searching for daily backups older than $D_Hist days to delete..."
+            ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f"
+        fi
+        if [ $W_Hist -gt -1 ]; then
+            echo "\t $(TimeStamp) Searching for weekly backups older than $W_Hist weeks to delete..."
+            ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f"
+        fi
+        if [ $M_Hist -gt -1 ]; then
+            echo "\t $(TimeStamp) Searching for monthly backups older than $M_Hist weeks to delete..."
+            ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f"
+        fi
+        if [ $Y_Hist -gt -1 ]; then
+            echo "\t $(TimeStamp) Searching for yearly backups older than $Y_Hist years to delete..."
+            ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f"
+        fi
     fi
-    if [ $W_Hist -gt -1 ]; then
-        echo "\t $(TimeStamp) Searching for weekly backups older than $W_Hist weeks to delete..."
-        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f"
-    fi
-    if [ $M_Hist -gt -1 ]; then
-        echo "\t $(TimeStamp) Searching for monthly backups older than $M_Hist weeks to delete..."
-        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f"
-    fi
-    if [ $Y_Hist -gt -1 ]; then
-        echo "\t $(TimeStamp) Searching for yearly backups older than $Y_Hist years to delete..."
-        ssh ${ServerUser}@${Server} "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f"
-     fi
-fi
-trap - ERR
+    trap - ERR
 
 #========================================================
 
-if [ -z "$DRYRUN" ]; then
-    rm -f "$LockPath"
-fi
+    if [ -z "$DRYRUN" ]; then
+        rm -f "$LockPath"
+    fi
 
-echo "\t $(TimeStamp) Done."
+    echo "\t $(TimeStamp) Done."
 
-exit 0
+    exit 0
