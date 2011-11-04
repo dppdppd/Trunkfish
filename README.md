@@ -61,8 +61,8 @@ TODO:
   
 *  Require root for setup scripts
 *  Create cfg on first run
-*  Add lots of explanation text to firsttime script
-
+*  Dynamically choose rsync exclusions based on OS
+*  Add scheduling support for cygwin
 
 Email:   M8R-u8t2l4 AT mailinator DOT com
 
