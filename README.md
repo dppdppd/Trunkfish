@@ -20,7 +20,7 @@ __Trunkfish__ is a script that creates periodic file backups of the machine exec
 
 I wrote __Trunkfish__ because I wanted a periodic hardlinked-based backup system that I could use to backup our home Macs onto the home DroboFS. The top contenders were TimeMachine and rsnapshot.
 
-__Trunkfish__ is different from Time Machine in that it does not use a proprietary storage format. It creates a directory for each day dated as such (e.g. "/2011-11-1/") which contains a complete snapshot of the target directory on the host computer. The tradeoff is that it is not a system image backup, but a loose file backup.
+__Trunkfish__ is different from Time Machine in that it does not use a proprietary storage format. It creates a directory for each day dated as such (e.g. "/2011-11-1/") which contains a complete snapshot of the target directory on the host computer. The trade-off is that it is not a system image backup, but a loose file backup.
 
 __Trunkfish__ is different from rsnapshot in that it is client-driven and does not require running any software other than rsync and ssh on the server. Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
 
