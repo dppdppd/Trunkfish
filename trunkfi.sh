@@ -13,8 +13,6 @@ ScriptDir="$( cd -P "$( dirname "$0" )" && pwd )"
 # File names and paths
 ScriptPath="$ScriptDir/trunkfi.sh"
 SettingsPath="$ScriptDir/trunkfish.cfg"
-SSHSetupScriptPath="$ScriptDir/setup_ssh_trunkfi.sh"
-SchedSetupScriptPath="$ScriptDir/schedule_trunkfi.sh"
 LockPath="$ScriptDir/~trunkfish_lock.pid"
 ExcludesPath="$ScriptDir/~trunkfish_excludes.txt"
 StdLogPath="$ScriptDir/~trunkfish.log"
