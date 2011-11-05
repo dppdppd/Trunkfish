@@ -18,6 +18,15 @@ ExcludesPath="$ScriptDir/~trunkfish_excludes.txt"
 StdLogPath="$ScriptDir/~trunkfish.log"
 ErrLogPath="$ScriptDir/~trunk_err.log"
 
+# Make sure only root can run our script
+if [[ $EUID -ne 0 ]]; then
+   echo
+   echo "\t This script requires root access."
+   echo "\t Preface the command with 'sudo ', e.g. 'sudo ./trunkfi.sh --dry-run'"
+   echo
+   exit 1
+fi
+
 if [ ! -e "$SettingsPath" ]; then
     echo "\t $SettingsPath is missing. Cannot continue."
     exit 1

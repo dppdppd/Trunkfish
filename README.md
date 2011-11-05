@@ -74,9 +74,8 @@ Temporary files that get generated during every backup:
 
 TODO:
   
-*  Require root for setup scripts
-*  Create cfg on first run
-*  Dynamically choose rsync exclusions based on OS
-*  Add scheduling support for cygwin
-
+* Create cfg on first run
+* Dynamically choose rsync exclusions based on OS
+* Add scheduling support for cygwin
+* Add versioning
 
