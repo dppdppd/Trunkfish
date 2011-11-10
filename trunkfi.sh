@@ -161,7 +161,7 @@ function uninstall_launchd(){
 
 function schedule_launchd(){
 
-    echo "Enter a time to backup in the form of a military hour with no minutes. Valid values are '0' to '23' where 0 is midnight and 23 is 11pm."
+    echo "Enter a hour of day to backup. Valid values are '0' to '23' where 0 is midnight and 23 is 11pm."
     read PlistHour
 
     Plist="
@@ -386,7 +386,7 @@ done
 # If we don't delete it, the next backup will generate lots of duplicate files because it will link to this partial directory. We'd rather it link to the previous good backup.
 
     trap trap_backup ERR
-    $DRYRUN rsync --stats --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -avz --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
+    $DRYRUN rsync --stats --force --ignore-errors --delete-excluded --exclude-from="$ExcludesPath" --delete -aHX --rsync-path="$RsyncPath" --out-format="%t %i %f%L" -e 'ssh -p 22' --link-dest=../"$PrevDate".d "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
     trap - ERR
 
 # backup was successful. Rename it.

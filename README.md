@@ -13,16 +13,16 @@ Copyright 2011 Ido Magal. All rights reserved. M8R-u8t2l4 AT mailinator DOT com
 
 ## What is Trunkfish?
 
-__Trunkfish__ is a script that creates periodic file backups of the machine executing it onto a separate machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work for backing up any posix device onto any other posix device, provided they have the requisite programs. 
+__Trunkfish__ is a script that creates periodic file backups of the machine executing it onto a separate machine. It was explicitly developed for backing up OSX machines onto a DroboFS, but, with some minimal work, should work on linux and cygwin'ed Windows machines. As of now, all but the scheduling works on cygwin. 
 
 
 ## Why Trunkfish?
 
 I wrote __Trunkfish__ because I wanted a periodic hardlinked-based backup system that I could use to backup our home Macs onto the home DroboFS. The top contenders were TimeMachine and rsnapshot.
 
-__Trunkfish__ is different from Time Machine in that it does not use a proprietary storage format. It creates a directory for each day dated as such (e.g. "/2011-11-1/") which contains a complete snapshot of the target directory on the host computer. The trade-off is that it is not a system image backup, but a loose file backup.
+__Trunkfish__ is differentiated from Time Machine in that it does not use a proprietary storage format. It creates a directory for each day dated as such (e.g. "/2011-11-1/") which contains a complete snapshot of the target directory on the host computer. The trade-off is that it is not a system image backup, but a loose file backup.
 
-__Trunkfish__ is different from rsnapshot in that it is client-driven and does not require running any software other than rsync and ssh on the server. Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
+__Trunkfish__ is differentiated from rsnapshot in that it is client-driven and does not require running any software other than rsync and ssh on the server. Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
 
 
 ## How do I use Trunkfish?
@@ -77,5 +77,5 @@ TODO:
 * Create cfg on first run
 * Dynamically choose rsync exclusions based on OS
 * Add scheduling support for cygwin
-* Add versioning
-
+* Add versioning to the script
+* fix w/m/y not getting re-made in case of a resumed backup
