@@ -74,6 +74,7 @@ Temporary files that get generated during every backup:
 
 TODO:
   
+* Backup into a sparsebundle to preserve OSX metadata
 * Create cfg on first run
 * Dynamically choose rsync exclusions based on OS
 * Add scheduling support for cygwin
