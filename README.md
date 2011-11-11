@@ -79,4 +79,4 @@ TODO:
 * Dynamically choose rsync exclusions based on OS
 * Add scheduling support for cygwin
 * Add versioning to the script
-* fix w/m/y not getting re-made in case of a resumed backup
+
