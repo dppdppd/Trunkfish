@@ -170,7 +170,7 @@ function uninstall_launchd(){
 
 function schedule_launchd(){
 
-    echo "Enter a hour of day to backup. Valid values are '0' to '23' where 0 is midnight and 23 is 11pm."
+    echo "Enter an hour of day to backup. Valid values are '0' to '23' where 0 is midnight and 23 is 11pm."
     read PlistHour
 
     Plist="
