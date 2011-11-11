@@ -23,11 +23,12 @@ LockPath="$ScriptDir/~trunkfish_lock.pid"
 ExcludesPath="$ScriptDir/~trunkfish_excludes.txt"
 StdLogPath="$ScriptDir/~trunkfish.log"
 ErrLogPath="$ScriptDir/~trunk_err.log"
-SSHKeyPath="$rHOME/.ssh/trunkfish_key"
 
 # Load settings
 . "$SettingsPath"
-    
+
+SSHKeyPath="$rHOME/.ssh/$SSHKey"
+
 # Make sure only root can run our script
 if [[ $EUID -ne 0 ]]; then
    echo
@@ -378,6 +379,7 @@ echo "Server:        $Server"
 echo "Output Log:    $StdLogPath"
 echo "Error Log:     $ErrLogPath"
 echo "Lock File:     $LockPath"
+echo "SSH Key File:  $SSHKeyPath"
 echo "Excludes File: $ExcludesPath"
 echo ------------------------------------------------------------------------------
 echo
