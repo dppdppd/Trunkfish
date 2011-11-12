@@ -441,8 +441,8 @@ $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemotePath}.incomplet
 # Backup is done. Copy the logs into the backup dir.
 if [ -z $NOLOGS ]; then
     echo "\t $(TimeStamp) Copying the logs..."
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -i "$SSHKeyPath"' "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -i "$SSHKeyPath"' "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
+    $DRYRUN rsync --rsync-path="$RsyncPath" -e $RsyncSSH "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
+    $DRYRUN rsync --rsync-path="$RsyncPath" -e $RsyncSSH "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
 fi
 
 
