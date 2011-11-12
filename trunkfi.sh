@@ -30,10 +30,10 @@ ErrLogPath="$ScriptDir/~trunk_err.log"
 SSHKeyPath="$rHOME/.ssh/$SSHKey"
 
 # Make sure only root can run our script
-if [[ $EUID -ne 0 ]]; then
+if [[ $EUID -ne 0 ]] && [[ $OS == "darwin" ]]; then
    echo
    echo "\t This script requires root access."
-   echo "\t Preface the command with 'sudo ', e.g. 'sudo ./trunkfi.sh --dry-run'"
+   echo "\t Preface the command with 'sudo ', e.g. 'sudo ./trunkfi.sh --first-time'"
    echo
    exit 1
 fi
@@ -86,7 +86,7 @@ function setup_ssh(){
     ThisUser=$(id -u -n)
 
     ThisComputer=$(hostname)
-
+    
     echo
     echo "\t The purpose of this script is to allow you to connect to $Server"
     echo "\t without requiring entering the SSH password every time, since it is"
@@ -408,9 +408,28 @@ RsyncOptions=(
     -e "$RsyncSSH"
 )
 
-trap trap_backup ERR
+RsyncErr=(
+    1 # Syntax or usage error
+    2 # Protocol incompatibility
+    3 # Errors selecting input/output files, dirs
+    4 # Requested action not supported: an attempt was made to manipulate 64-bit files on a platform that cannot support them; or an option was specified that is supported by the client and not by the server.
+    5 # Error starting client-server protocol
+    10 # Error in socket I/O
+    11 # Error in file I/O
+    12 # Error in rsync protocol data stream
+    13 # Errors with program diagnostics
+    14 # Error in IPC code
+    20 # Received SIGUSR1 or SIGINT
+    21 # Some error returned by waitpid()
+    22 # Error allocating core memory buffers
+    23 # Partial transfer due to error
+#     24 # Partial transfer due to vanished source files
+    30 # Timeout in data send/receive
+)
+
+trap trap_backup $RsyncErr
 $DRYRUN rsync "${RsyncOptions[@]}" "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
-trap - ERR
+trap - $RsyncErr
 
 # backup was successful. Rename it with an appropriate extension (d, w, m, or y)
 
