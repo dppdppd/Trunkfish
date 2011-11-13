@@ -30,7 +30,7 @@ ErrLogPath="$ScriptDir/~trunk_err.log"
 SSHKeyPath="$rHOME/.ssh/$SSHKey"
 
 # Make sure only root can run our script
-if [[ $EUID -ne 0 ]] && [[ $OS == "darwin" ]]; then
+if [[ $EUID -ne 0 ]] && [[ $OS != "cygwin" ]]; then
    echo
    echo "\t This script requires root access."
    echo "\t Preface the command with 'sudo ', e.g. 'sudo ./trunkfi.sh --first-time'"
@@ -425,6 +425,7 @@ RsyncErr=(
     23 # Partial transfer due to error
 #     24 # Partial transfer due to vanished source files
     30 # Timeout in data send/receive
+    135 # Unexplained error
 )
 
 trap trap_backup $RsyncErr
@@ -460,8 +461,8 @@ $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemotePath}.incomplet
 # Backup is done. Copy the logs into the backup dir.
 if [ -z $NOLOGS ]; then
     echo "\t $(TimeStamp) Copying the logs..."
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e $RsyncSSH "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e $RsyncSSH "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
+    $DRYRUN rsync --rsync-path="$RsyncPath" -e "$RsyncSSH" "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
+    $DRYRUN rsync --rsync-path="$RsyncPath" -e "$RsyncSSH" "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
 fi
 
 

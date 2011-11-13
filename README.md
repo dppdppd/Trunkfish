@@ -20,9 +20,15 @@ __Trunkfish__ is a script that creates periodic file backups of the machine exec
 
 I wrote __Trunkfish__ because I wanted a periodic hardlinked-based backup system that I could use to backup our home Macs onto the home DroboFS. The top contenders were TimeMachine and rsnapshot.
 
-__Trunkfish__ is differentiated from Time Machine in that it does not use a proprietary storage format. It creates a directory for each day dated as such (e.g. "/2011-11-1/") which contains a complete snapshot of the target directory on the host computer. The trade-off is that it is not a system image backup, but a loose file backup.
+__Trunkfish__ is differentiated from Time Machine in that it does not use a sparsebundle filesystem image as a destination for the backup. This has a few advantages. The primary advantage is that it's not as fragile as Time Machine. I got fed up with the Time Machine sparsebundle occasionally corrupting and losing the entire backup with all of its history.
 
-__Trunkfish__ is differentiated from rsnapshot in that it is client-driven and does not require running any software other than rsync and ssh on the server. Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
+On the other hand, the relative disadvantages to __Trunkfish__ are that it does not preserve OSX metadata and it cannot restore a system image.
+
+Not bound by a difficult-to-crack and fragile filesystem image,__Trunkfish__ simply creates a directory for each day dated as such (e.g. "/2011-11-1/") and puts a complete snapshot of the target directory on the host computer. No special software or bash knowledge is necessary to browse the entire backup history. The directories are clearly labeled by date and can be browsed and explored with any file manager, such as Finder.
+
+When I ran a home linux computer as a server, I used rsnapshot to backup our home machines. For the most part I liked rsnapshot but I didn't like that it was server-driven, that it required the kind of setup on the client that I had to relearn every time I wanted to tweak it, and that the backups were uselessly named relative to the current day.
+
+__Trunkfish__ is differentiated from rsnapshot in that it is client-driven (The server needs rsync and ssh, but otherwise doesn't know anything about the backing up). Additionally, it's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
 
 
 ## How do I use Trunkfish?
@@ -74,7 +80,7 @@ Temporary files that get generated during every backup:
 
 TODO:
   
-* Backup into a sparsebundle to preserve OSX metadata
+* OSX-specific: Backup into a sparsebundle to preserve OSX metadata
 * Create cfg on first run
 * Dynamically choose rsync exclusions based on OS
 * Add scheduling support for cygwin
