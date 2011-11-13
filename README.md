@@ -22,7 +22,7 @@ I wrote __Trunkfish__ because I wanted a periodic hardlinked-based backup system
 
 Unlike Time Machine, __Trunkfish__ does not use a sparsebundle filesystem image as a destination for the backup. The primary advantage is that it's not prone to total corruption like Time Machine was. I got fed up losing the entire backup, with all of its history, every time the lan hiccuped and the sparsebundle broke.
 
-Not bound by a difficult-to-crack and fragile filesystem image,__Trunkfish__ simply creates a directory for each day dated as such (e.g. "/2011-11-1/") and puts a complete snapshot of the desired directory onto the server. No special software or scripting knowledge is necessary to browse the entire backup history. The directories are clearly labeled by date and can be browsed and explored with any file manager, such as Finder.
+Not bound by a difficult-to-crack and fragile filesystem image, __Trunkfish__ simply creates a directory for each day dated as such (e.g. "/2011-11-1/") and puts a complete snapshot of the desired directory onto the server. No special software or scripting knowledge is necessary to browse the entire backup history. The directories are clearly labeled by date and can be browsed and explored with any file manager, such as Finder.
 
 On the other hand, the relative disadvantages to __Trunkfish__ are that it does not preserve OSX metadata and it cannot restore an entire system image; only all of its files.
 
