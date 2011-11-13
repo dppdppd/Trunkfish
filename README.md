@@ -24,7 +24,7 @@ Unlike Time Machine, __Trunkfish__ does not use a sparsebundle filesystem image 
 
 Not bound by a difficult-to-crack and fragile filesystem image,__Trunkfish__ simply creates a directory for each day dated as such (e.g. "/2011-11-1/") and puts a complete snapshot of the desired directory onto the server. No special software or scripting knowledge is necessary to browse the entire backup history. The directories are clearly labeled by date and can be browsed and explored with any file manager, such as Finder.
 
-On the other hand, the relative disadvantages to __Trunkfish__ are that it does not preserve OSX metadata and it cannot restore a system image.
+On the other hand, the relative disadvantages to __Trunkfish__ are that it does not preserve OSX metadata and it cannot restore an entire system image; only all of its files.
 
 When I ran a home linux computer as a file server, I used rsnapshot to backup our home machines. For the most part I liked rsnapshot but I didn't like that it was server-driven, that it required the kind of setup on the client that I had to relearn every time I wanted to tweak it, and that the backups were uselessly named relative to the current day.
 
