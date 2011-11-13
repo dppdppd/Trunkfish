@@ -18,7 +18,7 @@ __Trunkfish__ is a script that creates periodic file backups of the machine exec
 
 ## Why Trunkfish?
 
-I wrote __Trunkfish__ because I wanted a periodic hardlinked-based backup system that I could use to backup our home Macs onto the home DroboFS. The top contenders were TimeMachine and rsnapshot.
+I wrote __Trunkfish__ because I wanted a periodic hardlinked-based backup system that I could use to backup our home Macs onto the home DroboFS. The considered alternatives were TimeMachine and rsnapshot.
 
 Unlike Time Machine, __Trunkfish__ does not use a sparsebundle filesystem image as a destination for the backup. The primary advantage is that it's not prone to total corruption like Time Machine was. I got fed up losing the entire backup with all of its history every time the lan hiccuped and the sparsebundle broke.
 
@@ -28,7 +28,7 @@ On the other hand, the relative disadvantages to __Trunkfish__ are that it does 
 
 When I ran a home linux computer as a file server, I used rsnapshot to backup our home machines. For the most part I liked rsnapshot but I didn't like that it was server-driven, that it required the kind of setup on the client that I had to relearn every time I wanted to tweak it, and that the backups were uselessly named relative to the current day.
 
-__Trunkfish__ is client-driven (The server needs rsync and ssh, but otherwise doesn't know anything about the backing up). It's easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
+__Trunkfish__ isn't run or managed by the server (The server needs rsync and ssh, but otherwise doesn't know anything about the backing up) so one doesn't need to run the server; just have access to an account on a linux box. It's also easier to setup (doesn't require multiple cron jobs and rsync configs), and it uses absolute dates for backup directories rather than relative ones.
 
 
 ## How do I use Trunkfish?
