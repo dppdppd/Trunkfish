@@ -7,16 +7,16 @@
 # Store os for os-specific commands
 OS=${OSTYPE//[0-9.]/}
 
-if [ $OS == "darwin" ]; then
-    rHOME="/private/var/root"
+if [[ $OS == "darwin" ]]; then
+    RootHome="/private/var/root"
 else
-    rHOME="/root"
+    RootHome="/root"
 fi
 
 # Directory where this script is located.
 ScriptDir="$( cd -P "$( dirname "$0" )" && pwd )"
 
-# File names and paths
+# File names and paths, pre-settings load
 ScriptPath="$ScriptDir/trunkfi.sh"
 SettingsPath="$ScriptDir/trunkfish.cfg"
 LockPath="$ScriptDir/~trunkfish_lock.pid"
@@ -27,7 +27,12 @@ ErrLogPath="$ScriptDir/~trunk_err.log"
 # Load settings
 . "$SettingsPath"
 
-SSHKeyPath="$rHOME/.ssh/$SSHKey"
+# File names and paths, post-settings load
+SSHKeyPath="$RootHome/.ssh/$SSHKey"
+
+#-----------------------------------------
+
+SSH="ssh -i "$SSHKeyPath" ${ServerUser}@${Server}"
 
 # Make sure only root can run our script
 if [[ $EUID -ne 0 ]] && [[ $OS != "cygwin" ]]; then
@@ -38,14 +43,22 @@ if [[ $EUID -ne 0 ]] && [[ $OS != "cygwin" ]]; then
    exit 1
 fi
 
+function PRINT(){
+    echo "\033[37;44m$(TimeStamp)$1\033[0m"
+}
+
+function PRINT_ERROR(){
+    echo "\033[37;41m$(TimeStamp)$1\033[0m"
+}
+
 # Abort if the LockPath exists
-if [ -e $LockPath ]; then
-    echo "\t $(TimeStamp) Lock file exists, which means the previous backup did not end gracefully. Delete $LockPath and retry."
+if [[ -e $LockPath ]]; then
+    PRINT_ERROR "Lock file exists, which means the previous backup did not end gracefully. Delete $LockPath and retry."
     exit 1
 fi
 
-if [ ! -e "$SettingsPath" ]; then
-    echo "\t $SettingsPath is missing. Cannot continue."
+if [[ ! -e "$SettingsPath" ]]; then
+    PRINT_ERROR "$SettingsPath is missing. Cannot continue."
     exit 1
 fi
 
@@ -56,7 +69,7 @@ function first_time(){
 
     echo "In order to automate backups, we need to be able to ssh into the server without a password. Would you like me to set up password-less ssh now?"
     read SETUPSSH_YN
-    if [ "$SETUPSSH_YN" = "y" ]; then
+    if [[ "$SETUPSSH_YN" = "y" ]]; then
         setup_ssh
     else
         echo "You can set up password-less ssh later by typing 'sudo ./trunkfi.sh --setup-ssh'"
@@ -64,7 +77,7 @@ function first_time(){
 
     echo "In order to automate backups, you need to create a daemon that will run in the backround. Would you like to do so now?"
     read SCHEDULE_YN
-    if [ "$SCHEDULE_YN" = "y" ]; then
+    if [[ "$SCHEDULE_YN" = "y" ]]; then
         schedule_launchd
         echo "You can disable the backup daemon later by typing 'sudo ./trunkfi.sh --unschedule'"
     else
@@ -73,10 +86,10 @@ function first_time(){
 
     echo "Before you can automate backups, you'll need to back up once manually. Do you want to do this now?"
     read BACKUPNOW_YN
-    if [ "$BACKUPNOW_YN" = "y" ]; then
+    if [[ "$BACKUPNOW_YN" = "y" ]]; then
         NEWBACKUP=1
     else
-        echo "You can backup once manually by typping 'sudo ./trunkfi.sh -new'"
+        PRINT_ERROR "You can backup once manually by typing 'sudo ./trunkfi.sh -new'"
         exit 0
     fi
 }
@@ -103,22 +116,22 @@ function setup_ssh(){
     
     echo "\t Searching for $AuthorizedKeys on $Server."
     echo
-    if [ 0 -ne `ssh -i "$SSHKeyPath" ${ServerUser}@${Server} test -f "$AuthorizedKeys" ;echo \$?` ]; then
+    if [[ 0 -ne `"$SSH" test -f "$AuthorizedKeys" ;echo \$?` ]]; then
         echo
         echo "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file."
         echo
-        $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mkdir ~/.ssh" 2> /dev/null
+        $DRYRUN "$SSH" "mkdir ~/.ssh" 2> /dev/null
         echo
         echo "\t Creating $AuthorizedKeys on $Server."
         echo
-        $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "touch "$AuthorizedKeys""
+        $DRYRUN "$SSH" "touch "$AuthorizedKeys""
         echo
     else
         echo
         echo "\t $AuthorizedKeys exists."
         echo "\t Searching for an entry for ${ThisUser}@${ThisComputer} in $HOME/.ssh/authorized_keys."
         echo
-        if [ `ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]; then
+        if [[ `"$SSH" "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]]; then
             echo
             echo "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
             echo
@@ -131,7 +144,7 @@ function setup_ssh(){
         fi
     fi
     
-    if [ 0 -eq `eval test -f $SSHKeyPath.pub; echo \$?` ]; then
+    if [[ 0 -eq `eval test -f $SSHKeyPath.pub; echo \$?` ]]; then
         echo
         echo "\t I found an existing public key here: $SSHKeyPath.pub."
         echo "\t I will copy it onto the Server."
@@ -145,14 +158,14 @@ function setup_ssh(){
     fi
     
     $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -i "$SSHKeyPath"' "$SSHKeyPath".pub ${ServerUser}@${Server}:~/.ssh/tmp
-    $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "echo >> "$AuthorizedKeys" && cat ~/.ssh/tmp >> "$AuthorizedKeys" && rm ~/.ssh/tmp"
+    $DRYRUN "$SSH" "echo >> "$AuthorizedKeys" && cat ~/.ssh/tmp >> "$AuthorizedKeys" && rm ~/.ssh/tmp"
     
     echo
     echo "\t You should now be able to ssh into ${ServerUser}@${Server} as root without password prompt."
     echo
     echo "\t To try it, type:"
     echo
-    echo "\t\tsudo ssh -i "$SSHKeyPath" ${ServerUser}@${Server}"
+    echo "\t\tsudo "$SSH""
     echo
     echo "\t Type \"exit\" when you're done."
     echo
@@ -197,7 +210,7 @@ function schedule_launchd(){
         </dict>
         </plist>
         "
-    if [ -z "$DRYRUN" ]; then
+    if [[ -z "$DRYRUN" ]]; then
         echo "$Plist" > "$PlistPath"
     else
         echo "$Plist"
@@ -212,9 +225,9 @@ function schedule_launchd(){
 # If backup fails, delete partial backup and clean up.
 function trap_backup() {
     trap - ERR
-    echo "\t $(TimeStamp) Backup aborted. Cleaning up and deleting lock..."
-    $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemotePath}.incomplete ${RemotePath}.aborted.$$" &>/dev/null
-    $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "nohup rm -r -f ${RemotePath}.aborted.$$ &" &>/dev/null
+    PRINT_ERROR "Backup aborted. Cleaning up and deleting lock..."
+    $DRYRUN "$SSH" "mv ${RemotePath}.incomplete ${RemotePath}.aborted.$$" &>/dev/null
+    $DRYRUN "$SSH" "nohup rm -r -f ${RemotePath}.aborted.$$ &" &>/dev/null
 
     # save the logs of the failed backup  
     $DRYRUN mv $StdLogPath $ScriptDir"/"~TRUNKFISH_FAILED."${Today}".log &>/dev/null
@@ -258,7 +271,7 @@ for var in "$@"; do
 done
 
 # copy filters from Settings into an exclude file for rsync.
-if [ -z "$DRYRUN" ]; then
+if [[ -z "$DRYRUN" ]]; then
     echo "$RsyncFilter" > $ExcludesPath
 fi
 
@@ -274,28 +287,28 @@ RemotePath=$RemoteDir"/"$Today
 # Temp variable for searching previous backup
 _days=1
 
-# Last backup
-if [ $OS == "darwin" ]; then
-    PrevDate=$(date -v -${_days}d +"$DateFormat")
+# Date string of last backup
+if [[ $OS == "darwin" ]]; then
+    alias PrevDate='date -v -${_days}d +"$DateFormat"'
 else
-    PrevDate=$(date -d "-${_days} day" +"$DateFormat")
+    alias PrevDate='date -d "-${_days} day" +"$DateFormat"'
 fi
 
 # Validate directories
-if [ ! -e "$BackupDir" ]; then
-    echo "\t $(TimeStamp) The directory you are attempting to back up, \"$BackupDir\", does not exist."
+if [[ ! -e "$BackupDir" ]]; then
+    PRINT_ERROR "The directory you are attempting to back up, \"$BackupDir\", does not exist."
     exit 1
 fi
-if [ 0 -ne `ssh -i "$SSHKeyPath" ${ServerUser}@${Server} test -d "$RemoteDir" ;echo \$?` ]; then
-    echo "\t $(TimeStamp) $RemoteDir does not exist. If you're backing up to a DroboFS, use the Dashboard to create the Share."
+if [[ 0 -ne `$SSH test -d "$RemoteDir" ;echo \$?` ]]; then
+    PRINT_ERROR "$RemoteDir does not exist. If you're backing up to a DroboFS, use the Dashboard to create the Share."
     exit 1
 fi
-if [ 0 -ne `ssh -i "$SSHKeyPath" ${ServerUser}@${Server} test -f "$RsyncPath" ;echo \$?` ]; then
-    echo "\t $(TimeStamp) $RsyncPath does not exist. You either haven't installed rsync or you have the wrong path to it in the \$RsyncPath variable in this script."
+if [[ 0 -ne `$SSH test -f "$RsyncPath" ;echo \$?` ]]; then
+    PRINT_ERROR "$RsyncPath does not exist. You either haven't installed rsync or you have the wrong path to it in the \$RsyncPath variable in this script."
     exit 1
 fi
-if [ ! -e "$ExcludesPath" ]; then
-    echo "\t $(TimeStamp) $ExcludesPath does not exist. Rsync will not exclude any files."
+if [[ ! -e "$ExcludesPath" ]]; then
+    PRINT "$ExcludesPath does not exist. Rsync will not exclude any files."
     ExcludesPath=""
 fi
 
@@ -303,7 +316,7 @@ fi
 # Stuff starts happening here.
 #========================================================
 
-if [ -z "$DRYRUN" ]; then
+if [[ -z "$DRYRUN" ]]; then
 
     # Start by deleting the old logs
     rm -f "$StdLogPath" &>/dev/null
@@ -311,7 +324,7 @@ if [ -z "$DRYRUN" ]; then
 
     # Capture outputs in new log files
 
-    if [ -z "$NOLOGS" ]; then
+    if [[ -z "$NOLOGS" ]]; then
         exec > "$StdLogPath" 2>"$ErrLogPath"
     fi
 
@@ -322,39 +335,39 @@ fi
 
 echo
 echo
-echo "\t $(TimeStamp) Starting..."
+PRINT "Starting..."
 
 #========================================================
 # Find the previous backup, to which we're going to link against. 
 #========================================================
 
-if [ -z $NEWBACKUP ]; then 
-    echo "\t $(TimeStamp) Searching for the most recent backup, to which we're going to link today's backup..."
+if [[ -z $NEWBACKUP ]]; then 
+    PRINT "Searching for the most recent backup, to which we're going to link today's backup..."
 fi
 
 # Check if there already exists a backup for today. If so, move it to ".incomplete" and backup into it, picking up whatever has changed since.
-TodaysDir=`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} find $RemoteDir -maxdepth 1 -regex ".*${Today}\.[dwmy]" | awk -F/ '{ print $NF }'`
-if [ -n "$TodaysDir" ]; then
-    echo "\t $(TimeStamp) There already exists a backup for today: ${Today}. I will update it."
-    $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemoteDir}/${TodaysDir} ${RemoteDir}/${TodaysPath}.incomplete"
+TodaysDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*${Today}\.[dwmy]" | awk -F/ '{ print $NF }'`
+if [[ -n "$TodaysDir" ]]; then
+    PRINT "There already exists a backup for today: ${Today}. I will update it."
+    $DRYRUN $SSH "mv ${RemoteDir}/${TodaysDir} ${RemoteDir}/${Today}.incomplete"
 fi
 
-if [ -n "$NEWBACKUP" ]; then
+if [[ -n "$NEWBACKUP" ]]; then
     PrevDate=""
 else
-    PrevDir=`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} find $RemoteDir -maxdepth 1 -regex ".*${PrevDate}\.[dwmy]" | awk -F/ '{ print $NF }'`
-    while [ -z "$PrevDir" ]; do
+    while [[ -z "$PrevDir" ]]; do
         _days=`expr $_days + 1`
         PrevDate=$(date -v -${_days}d +"$DateFormat")
-        if [ _days > $SearchDays ] && [ -z SearchForever ]; then
-            echo "\t There doesn't exist a previous backup within $SearchDays days."
-            echo "\t If you've never run trunkfi.sh before, you need to run"
-            echo
-            echo "\t\t sudo ./trunkfi.sh --first-time"
-            echo
-            echo "\t If you just haven't run trunkfi.sh in a very long time, run "
-            echo
-            echo "\t\t sudo ./trunkfi.sh --extra-long-search"
+        PrevDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*$(PrevDate)\.[dwmy]" | awk -F/ '{ print $NF }'`
+        if [[ _days -gt $SearchDays ]] && [[ -z SearchForever ]]; then
+            PRINT_ERROR "There doesn't exist a previous backup within $SearchDays days."
+            PRINT_ERROR "If you've never run trunkfi.sh before, you need to run"
+            PRINT_ERROR
+            PRINT_ERROR "\t sudo ./trunkfi.sh --first-time"
+            PRINT_ERROR
+            PRINT_ERROR "If you just haven't run trunkfi.sh in a very long time, run "
+            PRINT_ERROR
+            PRINT_ERROR "\t sudo ./trunkfi.sh --extra-long-search"
             exit 1
         fi
     done
@@ -399,15 +412,16 @@ RsyncOptions=(
     --delete-excluded
     --exclude-from="$ExcludesPath"
     --delete
-    -rlptgoD    # same as --archive
-    -HX
-#    -A         # ACLs are not supported on DroboFS
+    -rlptgoD                    # same as --archive
+    -H
+#   -X                          # xattr are not supported on DroboFS
+#   -A                          # ACLs are not supported on DroboFS
     -cW
     --rsync-path="$RsyncPath"
     --out-format="%t %i %f%L"
     --link-dest=../"$PrevDir"
     -e "$RsyncSSH"
-    --bwlimit=1000
+    --bwlimit=4000
 )
 
 RsyncErr=(
@@ -427,8 +441,6 @@ RsyncErr=(
     23 # Partial transfer due to error
 #   24 # Partial transfer due to vanished source files
     30 # Timeout in data send/receive
-    32 # broken pipe
-    135 # Unexplained error
 )
 
 trap trap_backup "${RsyncErr[@]}"
@@ -437,35 +449,28 @@ trap - "${RsyncErr[@]}"
 
 # backup was successful. Rename it with an appropriate extension (d, w, m, or y)
 Ext="d"
-if [ 0 -ne $W_Hist ]; then
-    if [ -z "`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]; then
-        Ext="w"
-    fi
-fi
-if [ 0 -ne $M_Hist ]; then
-    if [ -z "`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]; then
-        Ext="m"
-    fi
-fi
-if [ 0 -ne $Y_Hist ]; then
-    if [ -z "`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]; then
-        Ext="y"
-    fi
+
+if [[ 0 -ne $Y_Hist ]] && [[ -z "`$SSH "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]]; then
+    Ext="y"
+elif [[ 0 -ne $M_Hist ]] && [[ -z "`$SSH "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]]; then
+    Ext="m"
+elif [[ 0 -ne $W_Hist ]] && [[ -z "`$SSH "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]]; then
+    Ext="w"
 fi
 
 case $Ext in
-    d)  echo "\t $(TimeStamp) Saving it as a daily backup...";;
-    w)  echo "\t $(TimeStamp) Saving it as a weekly backup...";;
-    m)  echo "\t $(TimeStamp) Saving it as a monthly backup...";;
-    y)  echo "\t $(TimeStamp) Saving it as a yearly backup...";;
+    d)  PRINT "Saving it as a daily backup...";;
+    w)  PRINT "Saving it as a weekly backup...";;
+    m)  PRINT "Saving it as a monthly backup...";;
+    y)  PRINT "Saving it as a yearly backup...";;
 esac
 
-echo "\t $(TimeStamp) backup completed successfully. Renaming ${RemotePath}.incomplete to ${RemotePath}.$Ext"
-$DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemotePath}.incomplete ${RemotePath}.$Ext"
+PRINT "backup completed successfully. Renaming ${RemotePath}.incomplete to ${RemotePath}.$Ext"
+$DRYRUN $SSH "mv ${RemotePath}.incomplete ${RemotePath}.$Ext"
 
 # Backup is done. Copy the logs into the backup dir.
-if [ -z $NOLOGS ]; then
-    echo "\t $(TimeStamp) Copying the logs..."
+if [[ -z $NOLOGS ]]; then
+    PRINT "Copying the logs..."
     $DRYRUN rsync --rsync-path="$RsyncPath" -e "$RsyncSSH" "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
     $DRYRUN rsync --rsync-path="$RsyncPath" -e "$RsyncSSH" "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
 fi
@@ -475,32 +480,32 @@ fi
 #========================================================
 
 trap "exit 1" ERR
-if [ -z $NEWBACKUP ]; then
-    if [ $D_Hist -gt -1 ]; then 
-        echo "\t $(TimeStamp) Searching for daily backups older than $D_Hist days to delete..."
-        ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+if [[ -z $NEWBACKUP ]]; then
+    if [[ $D_Hist -gt -1 ]]; then 
+        PRINT "Searching for daily backups older than $D_Hist days to delete..."
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f &"
     fi
-    if [ $W_Hist -gt -1 ]; then
-        echo "\t $(TimeStamp) Searching for weekly backups older than $W_Hist weeks to delete..."
-        ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+    if [[ $W_Hist -gt -1 ]]; then
+        PRINT "Searching for weekly backups older than $W_Hist weeks to delete..."
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
     fi
-    if [ $M_Hist -gt -1 ]; then
-        echo "\t $(TimeStamp) Searching for monthly backups older than $M_Hist weeks to delete..."
-        ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+    if [[ $M_Hist -gt -1 ]]; then
+        PRINT "Searching for monthly backups older than $M_Hist weeks to delete..."
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
     fi
-    if [ $Y_Hist -gt -1 ]; then
-        echo "\t $(TimeStamp) Searching for yearly backups older than $Y_Hist years to delete..."
-        ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+    if [[ $Y_Hist -gt -1 ]]; then
+        PRINT "Searching for yearly backups older than $Y_Hist years to delete..."
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
     fi
 fi
 trap - ERR
 
 #========================================================
 
-if [ -z "$DRYRUN" ]; then
+if [[ -z "$DRYRUN" ]]; then
     rm -f "$LockPath"
 fi
 
-echo "\t $(TimeStamp) Done."
+PRINT "Done."
 
 exit 0
