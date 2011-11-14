@@ -80,9 +80,9 @@ Temporary files that get generated during every backup:
 
 TODO:
   
-* OSX-specific: Backup into a sparsebundle to preserve OSX metadata
+* Replace cleanup search with dir string parse rather than last modified date search
+* OSX-specific: Backup into sparsebundles to preserve OSX metadata
 * Create cfg on first run
 * Dynamically choose rsync exclusions based on OS
 * Add scheduling support for cygwin
 * Add versioning to the script
-

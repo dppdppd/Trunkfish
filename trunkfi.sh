@@ -241,6 +241,8 @@ for var in "$@"; do
 
         --first-time)   first_time;;
 
+        --extra-long-search) SearchForever=1;;
+        
         *) 
         echo
         echo "Valid options:"
@@ -261,7 +263,7 @@ if [ -z "$DRYRUN" ]; then
 fi
 
 # number of days to search back for a backup to link to before giving up.
-SearchDays=30
+SearchDays=90
 
 # Today
 Today=$(date +$DateFormat)
@@ -337,29 +339,25 @@ if [ -n "$TodaysDir" ]; then
     $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemoteDir}/${TodaysDir} ${RemoteDir}/${TodaysPath}.incomplete"
 fi
 
-while [ -z "$NEWBACKUP" ]; do
-    PrevDir=`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} find $RemoteDir -maxdepth 1 -regex ".*${PrevDate}\.[dwmy]" | awk -F/ '{ print $NF }'`
-    if [ -z "$PrevDir" ]; then
-        _days=`expr $_days + 1`
-        if [ ${SearchDays} -eq ${_days} ]; then
-            echo "I can't find a previous backup less than $SearchDays days old."
-            echo "Is this your first backup?"
-            echo "Yes: Start a fresh backup with no linking."
-            echo "No:  Keep searching for an even older backup."
-            select yn in "Yes" "No"; do
-                case $yn in
-                    Yes) NEWBACKUP=1; break;;
-                    No ) SearchDays=`expr $SearchDays + $SearchDays`; echo $SearchDays; break;;
-                esac; done
-        fi
-        PrevDate=$(date -v -${_days}d +"$DateFormat")
-    else
-        break
-    fi
-done
-
 if [ -n "$NEWBACKUP" ]; then
     PrevDate=""
+else
+    PrevDir=`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} find $RemoteDir -maxdepth 1 -regex ".*${PrevDate}\.[dwmy]" | awk -F/ '{ print $NF }'`
+    while [ -z "$PrevDir" ]; do
+        _days=`expr $_days + 1`
+        PrevDate=$(date -v -${_days}d +"$DateFormat")
+        if [ _days > $SearchDays ] && [ -z SearchForever ]; then
+            echo "\t There doesn't exist a previous backup within $SearchDays days."
+            echo "\t If you've never run trunkfi.sh before, you need to run"
+            echo
+            echo "\t\t sudo ./trunkfi.sh --first-time"
+            echo
+            echo "\t If you just haven't run trunkfi.sh in a very long time, run "
+            echo
+            echo "\t\t sudo ./trunkfi.sh --extra-long-search"
+            exit 1
+        fi
+    done
 fi
 
 #========================================================
@@ -401,11 +399,15 @@ RsyncOptions=(
     --delete-excluded
     --exclude-from="$ExcludesPath"
     --delete
-    -aH
+    -rlptgoD    # same as --archive
+    -HX
+#    -A         # ACLs are not supported on DroboFS
+    -cW
     --rsync-path="$RsyncPath"
     --out-format="%t %i %f%L"
     --link-dest=../"$PrevDir"
     -e "$RsyncSSH"
+    --bwlimit=1000
 )
 
 RsyncErr=(
@@ -423,37 +425,40 @@ RsyncErr=(
     21 # Some error returned by waitpid()
     22 # Error allocating core memory buffers
     23 # Partial transfer due to error
-#     24 # Partial transfer due to vanished source files
+#   24 # Partial transfer due to vanished source files
     30 # Timeout in data send/receive
+    32 # broken pipe
     135 # Unexplained error
 )
 
-trap trap_backup $RsyncErr
+trap trap_backup "${RsyncErr[@]}"
 $DRYRUN rsync "${RsyncOptions[@]}" "$BackupDir" ${ServerUser}@${Server}:${RemotePath}.incomplete/
-trap - $RsyncErr
+trap - "${RsyncErr[@]}"
 
 # backup was successful. Rename it with an appropriate extension (d, w, m, or y)
-
 Ext="d"
-
 if [ 0 -ne $W_Hist ]; then
     if [ -z "`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]; then
-        echo "\t $(TimeStamp) Saving it as a weekly backup..."
         Ext="w"
     fi
 fi
 if [ 0 -ne $M_Hist ]; then
     if [ -z "`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]; then
-        echo "\t $(TimeStamp) Saving it as a monthly backup..."
         Ext="m"
     fi
 fi
 if [ 0 -ne $Y_Hist ]; then
     if [ -z "`ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]; then
-        echo "\t $(TimeStamp) Saving it as a yearly backup..."
         Ext="y"
     fi
 fi
+
+case $Ext in
+    d)  echo "\t $(TimeStamp) Saving it as a daily backup...";;
+    w)  echo "\t $(TimeStamp) Saving it as a weekly backup...";;
+    m)  echo "\t $(TimeStamp) Saving it as a monthly backup...";;
+    y)  echo "\t $(TimeStamp) Saving it as a yearly backup...";;
+esac
 
 echo "\t $(TimeStamp) backup completed successfully. Renaming ${RemotePath}.incomplete to ${RemotePath}.$Ext"
 $DRYRUN ssh -i "$SSHKeyPath" ${ServerUser}@${Server} "mv ${RemotePath}.incomplete ${RemotePath}.$Ext"
@@ -464,8 +469,6 @@ if [ -z $NOLOGS ]; then
     $DRYRUN rsync --rsync-path="$RsyncPath" -e "$RsyncSSH" "$StdLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
     $DRYRUN rsync --rsync-path="$RsyncPath" -e "$RsyncSSH" "$ErrLogPath" ${ServerUser}@${Server}:${RemotePath}.$Ext/
 fi
-
-
 
 #========================================================
 # Clean up old backups
