@@ -416,7 +416,8 @@ RsyncOptions=(
     -H
 #   -X                          # xattr are not supported on DroboFS
 #   -A                          # ACLs are not supported on DroboFS
-    -cW
+    -W
+#   -c                          # CRC checks are slow   
     --rsync-path="$RsyncPath"
     --out-format="%t %i %f%L"
     --link-dest=../"$PrevDir"
