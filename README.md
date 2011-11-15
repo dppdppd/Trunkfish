@@ -37,7 +37,7 @@ __Trunkfish__ isn't run or managed by the server (The server needs rsync and ssh
 #### How do I install Trunkfish?
 
   1. First, read this README.
-  2. _git clone git://github.com/idomagal/Trunkfish.git_
+  2. Download the latest release in the downloads section.
   3. Edit trunkfish.cfg to suit your backup.
   4. _sudo ./trunkfi.sh --first-time_
 
