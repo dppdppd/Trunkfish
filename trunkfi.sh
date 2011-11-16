@@ -8,9 +8,11 @@
 OS=${OSTYPE//[0-9.]/}
 
 if [[ $OS == "darwin" ]]; then
-    RootHome="/private/var/root"
+    SSHHome="/private/var/root"
+elif [[ $OS == "cygwin" ]]; then
+    SSHHome=$HOME
 else
-    RootHome="/root"
+    SSHHome="/root"
 fi
 
 # Directory where this script is located.
@@ -28,7 +30,7 @@ ErrLogPath="$ScriptDir/~trunk_err.log"
 . "$SettingsPath"
 
 # File names and paths, post-settings load
-SSHKeyPath="$RootHome/.ssh/$SSHKey"
+SSHKeyPath="$SSHHome/.ssh/$SSHKey"
 
 #-----------------------------------------
 
@@ -100,75 +102,75 @@ function setup_ssh(){
 
     ThisComputer=$(hostname)
     
-    echo
-    echo "\t The purpose of this script is to allow you to connect to $Server"
-    echo "\t without requiring entering the SSH password every time, since it is"
-    echo "\t expected that you'll want to automate the backups."
-    echo
-    echo "\t It will create a key for the root user on this machine to SSH as"
-    echo "\t $ServerUser into $Server in order to do the backups."
-    echo
-    echo "\t In order to do that, we'll need to SSH a few times into $Server, and"
-    echo "\t you'll need to provide the password for $ServerUser on $Server several times."
-    echo
+    echo -e
+    echo -e "\t The purpose of this script is to allow you to connect to $Server"
+    echo -e "\t without requiring entering the SSH password every time, since it is"
+    echo -e "\t expected that you'll want to automate the backups."
+    echo -e
+    echo -e "\t It will create a key for the root user on this machine to SSH as"
+    echo -e "\t $ServerUser into $Server in order to do the backups."
+    echo -e
+    echo -e "\t In order to do that, we'll need to SSH a few times into $Server, and"
+    echo -e "\t you'll need to provide the password for $ServerUser on $Server several times."
+    echo -e
     read -p "Press enter to start or Ctrl-C to exit..."
-    echo
+    echo -e
     
-    echo "\t Searching for $AuthorizedKeys on $Server."
-    echo
-    if [[ 0 -ne `"$SSH" test -f "$AuthorizedKeys" ;echo \$?` ]]; then
-        echo
-        echo "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file."
-        echo
+    echo -e "\t Searching for $AuthorizedKeys on $Server."
+    echo -e
+    if [[ 0 -ne `ssh ${ServerUser}@${Server} test -f "$AuthorizedKeys" ;echo -e \$?` ]]; then
+        echo -e
+        echo -e "\t $ServerUser@$Server doesn't have a $AuthorizedKeys file."
+        echo -e
         $DRYRUN "$SSH" "mkdir ~/.ssh" 2> /dev/null
-        echo
-        echo "\t Creating $AuthorizedKeys on $Server."
-        echo
-        $DRYRUN "$SSH" "touch "$AuthorizedKeys""
-        echo
+        echo -e
+        echo -e "\t Creating $AuthorizedKeys on $Server."
+        echo -e
+        $DRYRUN ssh ${ServerUser}@${Server} "touch "$AuthorizedKeys""
+        echo -e
     else
-        echo
-        echo "\t $AuthorizedKeys exists."
-        echo "\t Searching for an entry for ${ThisUser}@${ThisComputer} in $HOME/.ssh/authorized_keys."
-        echo
-        if [[ `"$SSH" "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]]; then
-            echo
-            echo "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
-            echo
+        echo -e
+        echo -e "\t $AuthorizedKeys exists."
+        echo -e "\t Searching for an entry for ${ThisUser}@${ThisComputer} in $HOME/.ssh/authorized_keys."
+        echo -e
+        if [[ `ssh ${ServerUser}@${Server} "grep -c ${ThisUser}@${ThisComputer} "$AuthorizedKeys""` -gt 0 ]]; then
+            echo -e
+            echo -e "\t ${ThisUser}@${ThisComputer} is already set to ssh without passwords to ${ServerUser}@${Server}."
+            echo -e
             exit 1
         else
-            echo
-            echo "\t ${ThisUser}@${ThisComputer} doesn't have an entry in $HOME/.ssh/authorized_keys."
-            echo "\t Let's add one."
-            echo
+            echo -e
+            echo -e "\t ${ThisUser}@${ThisComputer} doesn't have an entry in $HOME/.ssh/authorized_keys."
+            echo -e "\t Let's add one."
+            echo -e
         fi
     fi
     
     if [[ 0 -eq `eval test -f $SSHKeyPath.pub; echo \$?` ]]; then
-        echo
-        echo "\t I found an existing public key here: $SSHKeyPath.pub."
-        echo "\t I will copy it onto the Server."
-        echo
+        echo -e
+        echo -e "\t I found an existing public key here: $SSHKeyPath.pub."
+        echo -e "\t I will copy it onto the Server."
+        echo -e
     else
-        echo
-        echo "\t I didn't find a public key for you. You will need to generate one."
-        echo "\t I'm going to create one for you."
-        echo 
+        echo -e
+        echo -e "\t I didn't find a public key for you. You will need to generate one."
+        echo -e "\t I'm going to create one for you."
+        echo -e 
         $DRYRUN ssh-keygen -t rsa -N '' -f "$SSHKeyPath"
     fi
     
-    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh -i "$SSHKeyPath"' "$SSHKeyPath".pub ${ServerUser}@${Server}:~/.ssh/tmp
-    $DRYRUN "$SSH" "echo >> "$AuthorizedKeys" && cat ~/.ssh/tmp >> "$AuthorizedKeys" && rm ~/.ssh/tmp"
+    $DRYRUN rsync --rsync-path="$RsyncPath" -e 'ssh' "$SSHKeyPath".pub ${ServerUser}@${Server}:~/.ssh/tmp
+    $DRYRUN ssh ${ServerUser}@${Server} "echo >> "$AuthorizedKeys" && cat ~/.ssh/tmp >> "$AuthorizedKeys" && rm ~/.ssh/tmp"
     
-    echo
-    echo "\t You should now be able to ssh into ${ServerUser}@${Server} as root without password prompt."
-    echo
-    echo "\t To try it, type:"
-    echo
-    echo "\t\tsudo "$SSH""
-    echo
-    echo "\t Type \"exit\" when you're done."
-    echo
+    echo -e
+    echo -e "\t You should now be able to ssh into ${ServerUser}@${Server} as root without password prompt."
+    echo -e
+    echo -e "\t To try it, type:"
+    echo -e
+    echo -e "\t\tsudo "$SSH""
+    echo -e
+    echo -e "\t Type \"exit\" when you're done."
+    echo -e
 }
 
 function reset_launchd(){
@@ -357,7 +359,6 @@ if [[ -n "$NEWBACKUP" ]]; then
 else
     while [[ -z "$PrevDir" ]]; do
         _days=`expr $_days + 1`
-        PrevDate=$(date -v -${_days}d +"$DateFormat")
         PrevDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*$(PrevDate)\.[dwmy]" | awk -F/ '{ print $NF }'`
         if [[ _days -gt $SearchDays ]] && [[ -z SearchForever ]]; then
             PRINT_ERROR "There doesn't exist a previous backup within $SearchDays days."
@@ -451,11 +452,11 @@ trap - "${RsyncErr[@]}"
 # backup was successful. Rename it with an appropriate extension (d, w, m, or y)
 Ext="d"
 
-if [[ 0 -ne $Y_Hist ]] && [[ -z "`$SSH "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"`" ]]; then
+if [[ 0 -ne $Y_Hist ]] && [[ -z `$SSH "find "$RemoteDir" -type d -name "*.y" -maxdepth 1 -mtime -365"` ]]; then
     Ext="y"
-elif [[ 0 -ne $M_Hist ]] && [[ -z "`$SSH "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"`" ]]; then
+elif [[ 0 -ne $M_Hist ]] && [[ -z `$SSH "find "$RemoteDir" -type d -name "*.m" -maxdepth 1 -mtime -30"` ]]; then
     Ext="m"
-elif [[ 0 -ne $W_Hist ]] && [[ -z "`$SSH "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"`" ]]; then
+elif [[ 0 -ne $W_Hist ]] && [[ -z `$SSH "find "$RemoteDir" -type d -name "*.w" -maxdepth 1 -mtime -7"` ]]; then
     Ext="w"
 fi
 
