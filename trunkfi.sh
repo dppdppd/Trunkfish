@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #==============================================================================
 #  Copyright 2011 Ido Magal. All rights reserved. 
@@ -46,11 +46,11 @@ if [[ $EUID -ne 0 ]] && [[ $OS != "cygwin" ]]; then
 fi
 
 function PRINT(){
-    echo "\033[37;44m$(TimeStamp)$1\033[0m"
+    echo -e "\033[37;44m$(TimeStamp)$1\033[0m"
 }
 
 function PRINT_ERROR(){
-    echo "\033[37;41m$(TimeStamp)$1\033[0m"
+    echo -e "\033[37;41m$(TimeStamp)$1\033[0m"
 }
 
 # Abort if the LockPath exists
@@ -423,6 +423,7 @@ RsyncOptions=(
     --out-format="%t %i %f%L"
     --link-dest=../"$PrevDir"
     -e "$RsyncSSH"
+    --one-file-system
     --bwlimit=4000
 )
 
