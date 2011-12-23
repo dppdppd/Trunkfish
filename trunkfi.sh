@@ -358,8 +358,8 @@ if [[ -n "$NEWBACKUP" ]]; then
     PrevDate=""
 else
     while [[ -z "$PrevDir" ]]; do
-        _days=`expr $_days + 1`
         PrevDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*$(PrevDate)\.[dwmy]" | awk -F/ '{ print $NF }'`
+        _days=`expr $_days + 1`
         if [[ _days -gt $SearchDays ]] && [[ -z SearchForever ]]; then
             PRINT_ERROR "There doesn't exist a previous backup within $SearchDays days."
             PRINT_ERROR "If you've never run trunkfi.sh before, you need to run"
@@ -382,7 +382,7 @@ echo ---------------------------------------------------------------------------
 echo Working variables
 echo ------------------------------------------------------------------------------
 echo "Today's date:  $Today"
-echo "Last backup:   $PrevDate"
+echo "Last backup:   $(PrevDate)"
 echo "Backing up:    $BackupDir"
 echo "Destination:   $RemoteDir"/"$TodaysDir"
 echo "Link Dest:     $RemoteDir"/"$PrevDir"
