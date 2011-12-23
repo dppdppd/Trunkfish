@@ -287,7 +287,7 @@ Today=$(date +$DateFormat)
 RemotePath=$RemoteDir"/"$Today
 
 # Temp variable for searching previous backup
-_days=1
+_days=0
 
 # Date string of last backup
 if [[ $OS == "darwin" ]]; then
@@ -358,8 +358,8 @@ if [[ -n "$NEWBACKUP" ]]; then
     PrevDate=""
 else
     while [[ -z "$PrevDir" ]]; do
-        PrevDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*$(PrevDate)\.[dwmy]" | awk -F/ '{ print $NF }'`
         _days=`expr $_days + 1`
+        PrevDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*$(PrevDate)\.[dwmy]" | awk -F/ '{ print $NF }'`
         if [[ _days -gt $SearchDays ]] && [[ -z SearchForever ]]; then
             PRINT_ERROR "There doesn't exist a previous backup within $SearchDays days."
             PRINT_ERROR "If you've never run trunkfi.sh before, you need to run"
@@ -486,19 +486,19 @@ trap "exit 1" ERR
 if [[ -z $NEWBACKUP ]]; then
     if [[ $D_Hist -gt -1 ]]; then 
         PRINT "Searching for daily backups older than $D_Hist days to delete..."
-        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old | xargs -0 -r $DRYRUN rm -r -f &"
     fi
     if [[ $W_Hist -gt -1 ]]; then
         PRINT "Searching for weekly backups older than $W_Hist weeks to delete..."
-        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old | xargs -0 -r $DRYRUN rm -r -f &"
     fi
     if [[ $M_Hist -gt -1 ]]; then
         PRINT "Searching for monthly backups older than $M_Hist weeks to delete..."
-        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old | xargs -0 -r $DRYRUN rm -r -f &"
     fi
     if [[ $Y_Hist -gt -1 ]]; then
         PRINT "Searching for yearly backups older than $Y_Hist years to delete..."
-        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN rm -r -f &"
+        $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old | xargs -0 -r $DRYRUN rm -r -f &"
     fi
 fi
 trap - ERR
