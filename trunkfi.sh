@@ -423,7 +423,6 @@ RsyncOptions=(
     --out-format="%t %i %f%L"
     --link-dest=../"$PrevDir"
     -e "$RsyncSSH"
-    --one-file-system
     --bwlimit=4000
 )
 
