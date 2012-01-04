@@ -485,19 +485,19 @@ trap "exit 1" ERR
 if [[ -z $NEWBACKUP ]]; then
     if [[ $D_Hist -gt -1 ]]; then 
         PRINT "Searching for daily backups older than $D_Hist days to delete..."
-        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old"
+        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -print0 | xargs -0 -r $DRYRUN -I file mv file file.old"
     fi
     if [[ $W_Hist -gt -1 ]]; then
         PRINT "Searching for weekly backups older than $W_Hist weeks to delete..."
-        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old"
+        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -print0 | xargs -0 -r $DRYRUN -I file mv file file.old"
     fi
     if [[ $M_Hist -gt -1 ]]; then
         PRINT "Searching for monthly backups older than $M_Hist weeks to delete..."
-        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old"
+        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -print0 | xargs -0 -r $DRYRUN -I file mv file file.old"
     fi
     if [[ $Y_Hist -gt -1 ]]; then
         PRINT "Searching for yearly backups older than $Y_Hist years to delete..."
-        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN -I {} mv {} {}.old"
+        $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -print0 | xargs -0 -r $DRYRUN -I file mv file file.old"
     fi
     PRINT "Creating a task to delete all .old dirs." 
     $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.old\" -print0 | xargs -0 -r $DRYRUN rm -r -f &"
