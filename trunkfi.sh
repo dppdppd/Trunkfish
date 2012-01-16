@@ -16,6 +16,12 @@ function PRINT_ERROR(){
     echo -e "\033[37;41m$(TimeStamp)$1\033[0m"
 }
 
+function PRINT_WARNING(){
+    echo -e "\033[30;43m$(TimeStamp)$1\033[0m"
+}
+
+
+
 function first_time(){
 
     echo "In order to automate backups, we need to be able to ssh into the server without a password. Would you like me to set up password-less ssh now?"
@@ -188,9 +194,52 @@ function trap_backup() {
 }
 #==============================================================================
 
+function get_timestamp(){
+    dirName=$1
+    dirDate=`echo $dirName | sed "s/[^0-9\-]*\([0-9\-]*\).*/\1/g"`
+#    ts=`date -j -f "$DateFormat" "$dirDate" +"%s"`
+    echo $ts
+}
 
+function delete_old_backups(){
 
+    trap "PRINT_ERROR \"Failed to delete old backups\"" ERR
 
+    DIRS=( $($SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.[dwmy]\""))
+
+    for dirName in ${DIRS[@]}
+    do
+        dirTimestamp=`get_timestamp $dirName`
+
+        backupPeriod=`echo $dirName | sed "s/.*\.\([dwmy]\)/\1/g"`
+        
+        case "$backupPeriod" in
+
+            d)	_days=$D_Hist; reason="$D_Hist days";;
+
+            w)	_days=`expr $W_Hist \* 7`; reason="$W_Hist weeks";;
+
+            m)	_days=`expr $M_Hist \* 30`; reason="$M_Hist months";;
+
+            y)	_days=`expr $Y_Hist \* 365`; reason="$Y_Hist years";;
+
+        esac
+
+        if [ $_days -gt 0 ]; then
+
+            expiredDate=`date -j -v -${_days}d +"%s"`
+        
+            if [[ $dirTimestamp -lt $expiredDate ]] ; then
+                PRINT_WARNING "$dirName is older than ${reason}. Deleting..."
+                $DRYRUN_ $SSH mv ${dirName} ${dirName}.old
+            fi
+        fi
+    done
+
+        $DRYRUN_ $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.old\" -exec rm -r -f \"{}\" \;"
+
+    trap - ERR
+}
 
 #========================================================
 # SETUP
@@ -258,12 +307,22 @@ RemotePath=$RemoteDir"/"$Today
 # Temp variable for searching previous backup
 _days=0
 
-# Date string of last backup
 if [[ $OS == "darwin" ]]; then
     alias PrevDate='date -v -${_days}d +"$DateFormat"'
 else
     alias PrevDate='date -d "-${_days} day" +"$DateFormat"'
 fi
+
+# Date string of last backup
+#if [[ $OS == "darwin" ]]; then
+#    alias PrevDate='date -v -${_days}d +"$DateFormat"'
+#    alias ts='date -j -f "$DateFormat" "$dirDate" +"%s"'
+#    alias expiredDate='date -j -v -${_days}d +"%s"'
+#else
+#    alias PrevDate='date -d "-${_days} day" +"$DateFormat"'
+#    alias ts='date -j -f "$DateFormat" "$dirDate" +"%s"'
+#    alias expiredDate='date -j -d "-${_days} day" +"%s"'
+#fi
 
 #===========================================================
 # /SETUP
@@ -283,7 +342,7 @@ for var in "$@"; do
         --unschedule)   uninstall_launchd; exit 0;;
         
         --cleanup-only)	SKIP_BACKUP=1;;
-        
+
         --new)          NEWBACKUP=1;;
         
         --first-time)   first_time;;
@@ -329,7 +388,7 @@ if [[ -z "$SKIP_BACKUP" ]]; then
         exit 1
     fi
     if [[ ! -e "$ExcludesPath" ]]; then
-        PRINT "$ExcludesPath does not exist. Rsync will not exclude any files."
+        PRINT_WARNING "$ExcludesPath does not exist. Rsync will not exclude any files."
         ExcludesPath=""
     fi
 
@@ -365,7 +424,7 @@ if [[ -z "$SKIP_BACKUP" ]]; then
 # Check if there already exists a backup for today. If so, move it to ".incomplete" and backup into it, picking up whatever has changed since.
     TodaysDir=`$SSH find $RemoteDir -maxdepth 1 -regex ".*${Today}\.[dwmy]" | awk -F/ '{ print $NF }'`
     if [[ -n "$TodaysDir" ]]; then
-        PRINT "There already exists a backup for today: ${Today}. I will update it."
+        PRINT_WARNING "There already exists a backup for today: ${Today}. I will update it."
         ${DRYRUN_}$SSH "mv ${RemoteDir}/${TodaysDir} ${RemoteDir}/${Today}.incomplete"
     fi
     
@@ -504,31 +563,8 @@ fi
 # CLEAN UP
 #========================================================
 
-if [[ -z "$SKIP_CLEANUP" ]]; then
-
-    trap "PRINT_ERROR \"Failed to delete old backups\"" ERR
-    if [[ -z $NEWBACKUP ]]; then
-        if [[ $D_Hist -gt -1 ]]; then 
-            PRINT "Searching for daily backups older than $D_Hist days to delete..."
-            $DRYRUN_ $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.d\" -mtime +$D_Hist -exec mv \"{}\" \"{}.old\" \;"
-        fi
-        if [[ $W_Hist -gt -1 ]]; then
-            PRINT "Searching for weekly backups older than $W_Hist weeks to delete..."
-            $DRYRUN_ $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.w\" -mtime +`expr $W_Hist \* 7` -exec mv \"{}\" \"{}.old\" \;"
-        fi
-        if [[ $M_Hist -gt -1 ]]; then
-            PRINT "Searching for monthly backups older than $M_Hist weeks to delete..."
-            $DRYRUN_ $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.m\" -mtime +`expr $M_Hist \* 30` -exec mv \"{}\" \"{}.old\" \;"
-        fi
-        if [[ $Y_Hist -gt -1 ]]; then
-            PRINT "Searching for yearly backups older than $Y_Hist years to delete..."
-            $DRYRUN_ $SSH "find "$RemoteDir" -maxdepth 1 -type d -name \"*.y\" -mtime +`expr $Y_Hist \* 365` -exec mv \"{}\" \"{}.old\" \;"
-        fi
-        PRINT "Creating a task to delete all .old dirs." 
-        $DRYRUN_ $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.old\" -exec rm -r -f \"{}\" \;"
-    fi
-    trap - ERR
-
+if [[ -z $NEWBACKUP ]]; then
+    delete_old_backups
 fi
 
 #========================================================
