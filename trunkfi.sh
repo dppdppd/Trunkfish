@@ -197,7 +197,12 @@ function trap_backup() {
 function get_timestamp(){
     dirName=$1
     dirDate=`echo $dirName | sed "s/[^0-9\-]*\([0-9\-]*\).*/\1/g"`
-#    ts=`date -j -f "$DateFormat" "$dirDate" +"%s"`
+    if [[ $OS == "darwin" ]]; then
+        ts=`date -j -f "$DateFormat" "$dirDate" +"%s"`
+    else
+        ts=`date -d "$dirDate" +"%s"`
+    fi
+
     echo $ts
 }
 
@@ -227,8 +232,12 @@ function delete_old_backups(){
 
         if [ $_days -gt 0 ]; then
 
-            expiredDate=`date -j -v -${_days}d +"%s"`
-        
+            if [[ $OS == "darwin" ]]; then
+                expiredDate=`date -j -v -${_days}d +"%s"`
+            else
+                expiredDate=`date -d "-${_days} days" +"%s"`
+            fi
+
             if [[ $dirTimestamp -lt $expiredDate ]] ; then
                 PRINT_WARNING "$dirName is older than ${reason}. Deleting..."
                 $DRYRUN_ $SSH mv ${dirName} ${dirName}.old
