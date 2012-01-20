@@ -245,7 +245,7 @@ function delete_old_backups(){
         fi
     done
 
-        $DRYRUN_ $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.old\" -exec rm -r -f \"{}\" \;"
+        $DRYRUN_ $SSH "nohup find "$RemoteDir" -maxdepth 1 -type d -name \"*.old\" -print0| xargs -0 -r rm -r -f"
 
     trap - ERR
 }
